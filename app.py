@@ -733,7 +733,7 @@ def trial_chat_message():
     user_message = data.get("message", "")
     lang = data.get("language", "en")
 
-    # ==== NEW: persist trial_chat session if logged in ====
+    # ==== Persist trial_chat session if logged in ====
     if current_user.is_authenticated:
         trial_session = UserSession.query.filter_by(
             user_id=current_user.id,
@@ -753,13 +753,24 @@ def trial_chat_message():
         trial_session.messages.append({"role": "user", "content": user_message})
         db.session.commit()
 
-    # ==== NEW: actually generate AI reply in selected language ====
-    system_prompt = (
-        f"You are a supportive, emotionally intelligent companion. "
-        f"Always respond ONLY in {lang}. "
-        "Do not translate or add English unless the selected language is English. "
-        "Adapt your tone and style to the user’s emotions."
-    )
+    # ==== System prompt depends on language + formatting instruction ====
+    if lang == "en":
+        system_prompt = (
+            "You are a supportive, emotionally intelligent companion. "
+            "Always reply naturally in English. "
+            "Do not translate, repeat, or switch languages unless the user does. "
+            "If your response includes multiple suggestions, steps, or tips, "
+            "format them clearly as a numbered or bulleted Markdown list."
+        )
+    else:
+        system_prompt = (
+            "You are a supportive, emotionally intelligent companion. "
+            f"Always respond ONLY in {lang}. "
+            "Do not include English translations. "
+            "Adapt your tone and style to match the user’s emotions. "
+            "If your response includes multiple suggestions, steps, or tips, "
+            "format them clearly as a numbered or bulleted Markdown list."
+        )
 
     conversation = [
         {"role": "system", "content": system_prompt},
@@ -779,6 +790,7 @@ def trial_chat_message():
         reply = "Sorry, something went wrong."
 
     return jsonify({"reply": reply})
+
 
 
 # ========================================================================
@@ -882,12 +894,24 @@ def chat():
 
     conversation.append({"role": "user", "content": message})
 
-    system_prompt = (
-        f"You are {therapist_name}, a supportive and emotionally intelligent companion. "
-        f"Always respond ONLY in {language}. "
-        "Do not translate or add English unless the selected language is English. "
-        "Adapt your tone and style to match the user’s emotions."
-    )
+    # ✅ Smarter system prompt with structured formatting
+    if language == "en":
+        system_prompt = (
+            f"You are {therapist_name}, a supportive and emotionally intelligent companion. "
+            "Always reply naturally in English. "
+            "Do not translate, repeat, or switch languages unless the user does. "
+            "If your response includes multiple suggestions, steps, or tips, "
+            "format them clearly as a numbered or bulleted Markdown list."
+        )
+    else:
+        system_prompt = (
+            f"You are {therapist_name}, a supportive and emotionally intelligent companion. "
+            f"Always respond ONLY in {language}. "
+            "Do not include English translations. "
+            "Adapt your tone and style to match the user’s emotions. "
+            "If your response includes multiple suggestions, steps, or tips, "
+            "format them clearly as a numbered or bulleted Markdown list."
+        )
 
     prompt = [{"role": "system", "content": system_prompt}] + conversation
 
@@ -934,12 +958,17 @@ def call():
         if session_id not in user_sessions[user_id]:
             user_sessions[user_id][session_id] = []
 
-        if user_message != "__init__":
+        if user_message != "__init__":  # ignore init
             user_sessions[user_id][session_id].append({"role": "user", "content": user_message})
 
+        # ✅ Smarter system prompt with formatting instructions
         system_prompt = (
             "You are a compassionate, emotionally intelligent therapist. "
-            "Always reply in fluent English. Keep responses short and empathetic."
+            "Always reply in fluent English, naturally and empathetically. "
+            "Keep responses short but meaningful. "
+            "If you provide multiple suggestions, steps, or tips, "
+            "format them clearly as a numbered or bulleted Markdown list "
+            "so they can be read aloud and displayed neatly."
         )
 
         conversation = [{"role": "system", "content": system_prompt}] + user_sessions[user_id][session_id]
