@@ -5,27 +5,98 @@
   <title data-i18n="privacy_title">Privacy Policy</title>
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
   <style>
-    html, body {
-      height: 100%; margin: 0;
-      font-family: 'Inter', system-ui, sans-serif;
-      background: linear-gradient(135deg, #0f2b23, #112831);
-      color: #fff;
-      display: flex; justify-content: center; align-items: center;
-      padding: 20px;
-    }
-    .card {
-      background: rgba(20, 40, 35, 0.95);
-      border: 1px solid rgba(0,255,159,0.15);
-      border-radius: 16px;
-      box-shadow: 0 0 30px rgba(0, 255, 140, 0.1);
-      padding: 32px;
-      width: 100%; max-width: 800px;
-      overflow-y: auto;
-      max-height: 90vh;
-    }
-    h1, h2 { color: #00ff9f; margin-top: 0; }
-    h2 { margin-top: 20px; font-size: 1.2rem; }
-    p { color: #bfead8; line-height: 1.6; }
+  /* ---------- Base ---------- */
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: linear-gradient(135deg, #0f2b23, #112831);
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+/* ---------- Card Container ---------- */
+.card {
+  background: rgba(20, 40, 35, 0.95);
+  border: 1px solid rgba(0,255,159,0.15);
+  border-radius: 16px;
+  box-shadow: 0 0 30px rgba(0, 255, 140, 0.1);
+  padding: 32px;
+  width: 100%;
+  max-width: 800px;
+  overflow-y: auto;
+  max-height: 90vh;
+}
+
+/* ---------- Headings ---------- */
+h1 {
+  color: #00ff9f;
+  margin-top: 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+  text-align: center;
+}
+h2 {
+  color: #00ff9f;
+  margin-top: 20px;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+/* ---------- Paragraphs ---------- */
+p {
+  color: #bfead8;
+  line-height: 1.6;
+  margin-top: 8px;
+  font-size: 1rem;
+}
+
+/* ---------- Links inside text (if any) ---------- */
+a {
+  color: #00ff9f;
+  text-decoration: none;
+  font-weight: 600;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Scrollbar styling ---------- */
+.card::-webkit-scrollbar {
+  width: 8px;
+}
+.card::-webkit-scrollbar-thumb {
+  background: rgba(0,255,159,0.25);
+  border-radius: 6px;
+}
+.card::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+  .card {
+    padding: 20px;
+    max-height: 85vh;
+  }
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.1rem; }
+  p  { font-size: 0.95rem; }
+}
+
+@media (max-width: 480px) {
+  body { padding: 12px; }
+  .card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+  h1 { font-size: 1.3rem; }
+  h2 { font-size: 1rem; }
+  p  { font-size: 0.9rem; }
+}
   </style>
 </head>
 <body>

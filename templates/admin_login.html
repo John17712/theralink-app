@@ -2,23 +2,92 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1"> <!-- 👈 Makes it mobile friendly -->
   <title>Admin Login</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body { background: #0f2b23; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; }
-    .login-box { background: rgba(20,40,35,0.9); padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,255,159,0.2); width: 300px; }
-    input { width: 100%; padding: 10px; margin: 10px 0; border-radius: 6px; border: 1px solid #00ff9f; background: #112831; color: #fff; }
-    button { width: 100%; padding: 10px; background: #00ff9f; color: #0f2b23; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-    button:hover { background: #00d88c; }
+    body {
+      background: #0f2b23;
+      color: #fff;
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 15px; /* 👈 ensures content isn’t cut off on phones */
+    }
+    .login-box {
+      background: rgba(20,40,35,0.95);
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,255,159,0.2);
+      width: 100%;
+      max-width: 400px; /* 👈 scales on desktop, fits phone screens */
+    }
+    .login-box h2 {
+      margin-bottom: 20px;
+      text-align: center;
+      font-weight: bold;
+      color: #00ff9f;
+    }
+    .form-control {
+      background: #112831;
+      border: 1px solid #00ff9f;
+      color: #fff;
+    }
+    .form-control:focus {
+      box-shadow: 0 0 5px #00ff9f;
+      border-color: #00ff9f;
+      background: #132f39;
+    }
+
+    /* ✅ Force placeholder color */
+    ::placeholder {
+      color: #00ff9f !important; /* bright green to match theme */
+      opacity: 1 !important;
+    }
+    :-ms-input-placeholder { color: #00ff9f !important; }
+    ::-ms-input-placeholder { color: #00ff9f !important; }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #00ff9f;
+      color: #0f2b23;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      transition: 0.2s;
+    }
+    button:hover {
+      background: #00d88c;
+    }
+
+    /* 👇 small mobile tweak */
+    @media (max-width: 576px) {
+      .form-control, button {
+        font-size: 16px; /* avoids iOS zoom issue */
+      }
+    }
   </style>
 </head>
 <body>
   <div class="login-box">
     <h2>Admin Login</h2>
     <form method="POST">
-      <input type="email" name="email" placeholder="Admin Email" required>
-      <input type="password" name="password" placeholder="Password" required>
+      <div class="mb-3">
+        <input type="email" name="email" class="form-control" placeholder="Admin Email" required>
+      </div>
+      <div class="mb-3">
+        <input type="password" name="password" class="form-control" placeholder="Password" required>
+      </div>
       <button type="submit">Login</button>
     </form>
   </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -10,80 +10,169 @@
 
   <title>Theralink • Login</title>
   <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      background: linear-gradient(135deg, #0f2b23, #112831);
-      color: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .card {
-      background: rgba(20, 40, 35, 0.95);
-      border: 1px solid rgba(0,255,159,0.15);
-      border-radius: 16px;
-      box-shadow: 0 0 30px rgba(0, 255, 140, 0.1);
-      padding: 32px;
-      width: 100%;
-      max-width: 420px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-    .title {
-      margin: 0;
-      text-align: center;
-      font-size: 1.6rem;
-      font-weight: 800;
-      color: #00ff9f;
-    }
-    .subtitle {
-      margin: -6px 0 0 0;
-      text-align: center;
-      font-weight: 600;
-      color: #bfead8;
-      opacity: .9;
-    }
-    .flash { padding: 10px 12px; border-radius: 10px; font-weight: 600; }
-    .flash.success { background: rgba(0,255,159,0.12); color: #d6ffe7; border: 1px solid rgba(0,255,159,0.25); }
-    .flash.error { background: rgba(255,77,77,0.12); color: #ffd6d6; border: 1px solid rgba(255,77,77,0.35); }
-    .flash.info { background: rgba(255,255,255,0.08); color: #e7f7f1; border: 1px solid rgba(255,255,255,0.12); }
+ /* ---------- Base ---------- */
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: linear-gradient(135deg, #0f2b23, #112831);
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
-    form { display: flex; flex-direction: column; gap: 16px; }
-    .form-group { display: flex; flex-direction: column; gap: 8px; }
-    .form-group + .form-group { margin-top: 6px; } /* extra breathing space between inputs */
-    label { font-weight: 600; font-size: 0.9rem; color: #bfead8; }
-    input {
-      padding: 12px 12px;
-      border-radius: 10px;
-      border: 1px solid rgba(0,255,159,0.15);
-      background: #0f2b23;
-      color: #fff;
-      outline: none;
-    }
-    input:focus { border-color: #00ff9f; }
+/* ---------- Card ---------- */
+.card {
+  background: rgba(20, 40, 35, 0.95);
+  border: 1px solid rgba(0,255,159,0.15);
+  border-radius: 16px;
+  box-shadow: 0 0 30px rgba(0, 255, 140, 0.1);
+  padding: 32px;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
 
-    .row-between {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-top: -4px;
-    }
-    .link {
-      color: #00ff9f; font-weight: 600; text-decoration: none;
-    }
-    .link:hover { text-decoration: underline; }
+/* ---------- Titles ---------- */
+.title {
+  margin: 0;
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #00ff9f;
+}
+.subtitle {
+  margin: -6px 0 0 0;
+  text-align: center;
+  font-weight: 600;
+  color: #bfead8;
+  opacity: .9;
+}
 
-    .btn {
-      width: 100%;
-      background: #00ff9f; color: #0f2b23; font-weight: 800;
-      border: none; border-radius: 10px; padding: 12px; cursor: pointer;
-      margin-top: 6px;
-    }
-    .btn:hover { background: #00d88c; }
-    .muted {
-      text-align: center; font-size: 0.9rem; color: #bfead8;
-    }
+/* ---------- Flash messages ---------- */
+.flash {
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.flash.success {
+  background: rgba(0,255,159,0.12);
+  color: #d6ffe7;
+  border: 1px solid rgba(0,255,159,0.25);
+}
+.flash.error {
+  background: rgba(255,77,77,0.12);
+  color: #ffd6d6;
+  border: 1px solid rgba(255,77,77,0.35);
+}
+.flash.info {
+  background: rgba(255,255,255,0.08);
+  color: #e7f7f1;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+/* ---------- Forms ---------- */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.form-group + .form-group {
+  margin-top: 6px;
+}
+label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #bfead8;
+}
+input {
+  padding: 12px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,255,159,0.15);
+  background: #0f2b23;
+  color: #fff;
+  outline: none;
+  font-size: 0.95rem;
+}
+input::placeholder {
+  color: #8fbfaf;
+  opacity: 0.8;
+}
+input:focus {
+  border-color: #00ff9f;
+  box-shadow: 0 0 4px rgba(0,255,159,0.25);
+}
+
+/* ---------- Links & Row ---------- */
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: -4px;
+}
+.link {
+  color: #00ff9f;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.link:hover { text-decoration: underline; }
+
+/* ---------- Buttons ---------- */
+.btn {
+  width: 100%;
+  background: #00ff9f;
+  color: #0f2b23;
+  font-weight: 800;
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  margin-top: 6px;
+  font-size: 1rem;
+}
+.btn:hover { background: #00d88c; }
+
+/* Special renew button inside flash */
+.flash .btn {
+  width: auto;
+  background: #ffcc00;
+  color: #0f2b23;
+  font-weight: bold;
+  padding: 10px 20px;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+.flash .btn:hover { background: #e6b800; }
+
+/* ---------- Muted text ---------- */
+.muted {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #bfead8;
+  margin-top: 8px;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 480px) {
+  .card {
+    padding: 24px;
+    border-radius: 12px;
+  }
+  .title { font-size: 1.3rem; }
+  .subtitle { font-size: 1rem; }
+  input, .btn { font-size: 1rem; }
+  .row-between { flex-direction: column; gap: 6px; align-items: flex-end; }
+}
   </style>
 </head>
 <body>

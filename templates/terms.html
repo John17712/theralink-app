@@ -5,25 +5,128 @@
   <title data-i18n="terms_title">Terms and Conditions</title>
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
   <style>
-    html, body {
-      height: 100%; margin: 0;
-      font-family: 'Inter', system-ui, sans-serif;
-      background: linear-gradient(135deg, #0f2b23, #112831);
-      color: #fff; display: flex; justify-content: center; align-items: flex-start;
-      padding: 40px;
-    }
-    .card {
-      background: rgba(20, 40, 35, 0.95);
-      border: 1px solid rgba(0,255,159,0.15);
-      border-radius: 16px;
-      box-shadow: 0 0 30px rgba(0,255,140,0.1);
-      padding: 32px;
-      max-width: 800px;
-      width: 100%;
-    }
-    h1 { color: #00ff9f; margin-top: 0; }
-    h2 { color: #bfead8; margin-top: 24px; }
-    p { line-height: 1.6; margin-top: 12px; }
+ /* ---------- Base ---------- */
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: linear-gradient(135deg, #0f2b23, #112831);
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px;
+  box-sizing: border-box;
+}
+
+/* ---------- Card ---------- */
+.card {
+  background: rgba(20, 40, 35, 0.95);
+  border: 1px solid rgba(0,255,159,0.15);
+  border-radius: 16px;
+  box-shadow: 0 0 30px rgba(0,255,140,0.1);
+  padding: 32px;
+  max-width: 800px;
+  width: 100%;
+  overflow-y: auto;
+  max-height: 90vh;
+}
+
+/* ---------- Typography ---------- */
+h1 {
+  color: #00ff9f;
+  margin-top: 0;
+  font-size: 2rem;
+}
+h2 {
+  color: #bfead8;
+  margin-top: 24px;
+  font-size: 1.25rem;
+}
+p {
+  line-height: 1.6;
+  margin-top: 12px;
+  color: #e0f5ee;
+}
+
+/* ---------- Links inside card ---------- */
+.card a {
+  color: #00ff9f;
+  text-decoration: none;
+  font-weight: 600;
+}
+.card a:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Scrollbar styling ---------- */
+.card::-webkit-scrollbar {
+  width: 8px;
+}
+.card::-webkit-scrollbar-thumb {
+  background: rgba(0,255,159,0.3);
+  border-radius: 8px;
+}
+.card::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------- Responsive Adjustments ---------- */
+@media (max-width: 992px) {
+  .card {
+    padding: 24px;
+  }
+  h1 {
+    font-size: 1.75rem;
+  }
+  h2 {
+    font-size: 1.15rem;
+  }
+  p {
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    padding: 20px;
+  }
+  .card {
+    padding: 20px;
+    max-height: none;
+  }
+  h1 {
+    font-size: 1.5rem;
+    text-align: center;
+  }
+  h2 {
+    font-size: 1.05rem;
+  }
+  p {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 12px;
+  }
+  .card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+  h1 {
+    font-size: 1.3rem;
+  }
+  h2 {
+    font-size: 1rem;
+  }
+  p {
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+}
+
   </style>
 </head>
 <body>

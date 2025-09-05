@@ -8,41 +8,50 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <script src="https://js.stripe.com/v3/"></script>
   <style>
-    .subscribe-container {
-      max-width: 600px;
-      margin: 80px auto;
-      padding: 30px;
-      background: rgba(15, 43, 35, 0.95);
-      border-radius: 12px;
-      text-align: center;
-      box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.3);
-    }
-    .subscribe-container h1 {
-      color: #00ff9f;
-      font-size: 2rem;
-      margin-bottom: 15px;
-    }
-    .subscribe-container p {
-      font-size: 1.1rem;
-      color: #eee;
-      margin-bottom: 20px;
-    }
-    .subscribe-container button {
-      background: #00ff9f;
-      color: #0f2b23;
-      font-weight: 600;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: background 0.2s ease;
-    }
-    .subscribe-container button:hover {
-      background: #00d88c;
-    }
+  /* ---------- Base ---------- */
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: linear-gradient(135deg, #0f2b23, #112831);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
 
-    .brand-link {
+/* ---------- Navbar ---------- */
+.navbar {
+  background-color: rgba(15, 43, 35, 0.95);
+  padding: 10px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(0,255,159,0.2);
+}
+.nav-left, .nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.nav-item {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+.nav-item:hover,
+.nav-item.active {
+  color: #00ff9f;
+}
+
+/* ---------- Branding ---------- */
+.logo-img {
+  height: 32px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.brand-link {
   display: flex;
   align-items: center;
   text-decoration: none;
@@ -52,42 +61,121 @@
   font-size: 1.2rem;
   font-weight: 700;
   color: #00ff9f;
+  transition: color 0.2s ease;
 }
 .brand-link:hover .brand-name {
   color: #00d88c;
 }
- .navbar {
-  background-color: rgba(15, 43, 35, 0.95);
-  padding: 10px 10px;
-  height: 40px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid rgba(0,255,159,0.2);
-}
 
-.nav-left, .nav-right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
+/* ---------- Subscribe Box ---------- */
+.subscribe-container {
+  max-width: 600px;
+  margin: 60px auto;
+  padding: 30px;
+  background: rgba(15, 43, 35, 0.95);
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.3);
 }
-
-.nav-item {
-  color: #fff;
-  text-decoration: none;
-  font-weight: 600;
+.subscribe-container h1 {
+  color: #00ff9f;
+  font-size: 2rem;
+  margin-bottom: 15px;
 }
-
-.nav-item:hover, .nav-item.active {
+.subscribe-container p {
+  font-size: 1.1rem;
+  color: #eee;
+  margin-bottom: 20px;
+}
+.subscribe-container strong {
   color: #00ff9f;
 }
-
-
-    .logo-img {
-     height: 32px;
-     margin-right: 8px;
-     vertical-align: middle;
+.subscribe-container button {
+  background: #00ff9f;
+  color: #0f2b23;
+  font-weight: 700;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
+.subscribe-container button:hover {
+  background: #00d88c;
+}
+
+/* ---------- Footer ---------- */
+footer {
+  text-align: center;
+  margin-top: auto;
+  padding: 16px;
+  font-size: 0.9rem;
+  color: #bfead8;
+}
+footer a {
+  color: #00ff9f;
+  text-decoration: none;
+  font-weight: 600;
+  margin: 0 4px;
+}
+footer a:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Responsive Adjustments ---------- */
+@media (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px;
+  }
+  .nav-right {
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+  }
+  .subscribe-container {
+    margin: 40px 16px;
+    padding: 24px;
+  }
+  .subscribe-container h1 {
+    font-size: 1.6rem;
+  }
+  .subscribe-container p {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar {
+    padding: 10px;
+  }
+  .brand-name {
+    font-size: 1rem;
+  }
+  .subscribe-container {
+    margin: 30px 12px;
+    padding: 20px;
+    border-radius: 10px;
+  }
+  .subscribe-container h1 {
+    font-size: 1.3rem;
+  }
+  .subscribe-container p {
+    font-size: 0.95rem;
+  }
+  .subscribe-container button {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+  }
+  footer {
+    font-size: 0.8rem;
+    padding: 12px;
+  }
+}
+
   </style>
 </head>
 <body>

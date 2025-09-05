@@ -2,27 +2,54 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/> <!-- 👈 ensures responsiveness -->
   <title>Admin Panel - TheraLink</title>
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
   <style>
     body { margin:0; font-family:'Inter', system-ui, sans-serif; background:linear-gradient(135deg,#0f2b23,#112831); color:#fff; }
-    .navbar { background:rgba(15,43,35,0.95); padding:12px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,255,159,0.2); }
-    .navbar a { color:#00ff9f; text-decoration:none; margin-left:16px; }
+    .navbar { background:rgba(15,43,35,0.95); padding:12px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,255,159,0.2); flex-wrap:wrap; }
+    .navbar a { color:#00ff9f; text-decoration:none; margin-left:16px; display:inline-block; margin-top:6px; }
     .container { padding:20px; max-width:1300px; margin:auto; }
     h2,h3 { color:#00ff9f; }
     .card { background:rgba(20,40,35,0.95); border:1px solid rgba(0,255,159,0.15); border-radius:12px; padding:20px; margin-bottom:20px; }
     .btn { background:#00ff9f; color:#0f2b23; font-weight:bold; border:none; border-radius:8px; padding:8px 14px; cursor:pointer; font-size:0.9rem; }
     .btn:hover { background:#00d88c; }
-    input, textarea { width:100%; padding:10px; margin:6px 0; border:1px solid rgba(0,255,159,0.15); border-radius:8px; background:#0f2b23; color:#fff; }
+    input, textarea {
+      width:100%; padding:10px; margin:6px 0;
+      border:1px solid rgba(0,255,159,0.15); border-radius:8px;
+      background:#0f2b23; color:#fff;
+    }
+    /* ✅ Placeholder fix */
+    ::placeholder { color:#00ff9f !important; opacity:1 !important; }
+    :-ms-input-placeholder { color:#00ff9f !important; }
+    ::-ms-input-placeholder { color:#00ff9f !important; }
+
+    /* Tables */
+    .table-responsive { width:100%; overflow-x:auto; }
     table { width:100%; border-collapse:collapse; margin-top:15px; }
-    th, td { border:1px solid rgba(0,255,159,0.15); padding:10px; text-align:left; }
+    th, td { border:1px solid rgba(0,255,159,0.15); padding:10px; text-align:left; white-space:nowrap; }
     th { background:rgba(0,255,159,0.1); color:#00ff9f; }
     tr:hover { background:rgba(0,255,159,0.08); }
+
     .status-active { color:#00ff9f; font-weight:bold; }
     .status-pending { color:#ffcc00; font-weight:bold; }
     .status-inactive { color:#ff5555; font-weight:bold; }
     .actions button { margin-right:6px; }
+
+    /* 👇 Mobile tweaks */
+    @media (max-width:768px) {
+      .navbar { flex-direction:column; align-items:flex-start; }
+      .navbar div { margin:4px 0; }
+      table { font-size:0.85rem; }
+      .btn { width:100%; margin-top:6px; }
+      th, td { padding:8px; }
+    }
+    @media (max-width:480px) {
+      .container { padding:12px; }
+      h2 { font-size:1.3rem; }
+      h3 { font-size:1.1rem; }
+      input, textarea, .btn { font-size:1rem; }
+    }
   </style>
 </head>
 <body>
@@ -69,91 +96,95 @@
   <!-- Individual Users -->
   <div class="card">
     <h3>Individual Users</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>Email</th>
-          <th>Subscription Type</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Primary Admin pinned -->
-        <tr style="background:rgba(0,255,159,0.05);">
-          <td>support@theralinkapp.com</td>
-          <td>Admin</td>
-          <td><span class="status-active">Active</span></td>
-          <td><strong>—</strong></td>
-        </tr>
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Subscription Type</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Primary Admin pinned -->
+          <tr style="background:rgba(0,255,159,0.05);">
+            <td>support@theralinkapp.com</td>
+            <td>Admin</td>
+            <td><span class="status-active">Active</span></td>
+            <td><strong>—</strong></td>
+          </tr>
 
-        <!-- Other individual users -->
-        {% for user in users if not user.group_id and user.email != "support@theralinkapp.com" %}
-        <tr>
-          <td>{{ user.email }}</td>
-          <td>{{ user.subscription_type or '—' }}</td>
-          <td>
-            {% if not user.is_subscribed %}
-              <span class="status-pending">Pending</span>
-            {% elif user.is_active %}
-              <span class="status-active">Active</span>
-            {% else %}
-              <span class="status-inactive">Inactive</span>
-            {% endif %}
-          </td>
-          <td class="actions">
-            <form method="POST" action="/admin/grant_free/{{ user.id }}" style="display:inline;">
-              <button type="submit" class="btn">Grant Free</button>
-            </form>
-            <form method="POST" action="/admin/delete/{{ user.id }}" style="display:inline;" 
-                  onsubmit="return confirm('Are you sure you want to delete this user?');">
-              <button type="submit" class="btn">Delete</button>
-            </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+          <!-- Other individual users -->
+          {% for user in users if not user.group_id and user.email != "support@theralinkapp.com" %}
+          <tr>
+            <td>{{ user.email }}</td>
+            <td>{{ user.subscription_type or '—' }}</td>
+            <td>
+              {% if not user.is_subscribed %}
+                <span class="status-pending">Pending</span>
+              {% elif user.is_active %}
+                <span class="status-active">Active</span>
+              {% else %}
+                <span class="status-inactive">Inactive</span>
+              {% endif %}
+            </td>
+            <td class="actions">
+              <form method="POST" action="/admin/grant_free/{{ user.id }}" style="display:inline;">
+                <button type="submit" class="btn">Grant Free</button>
+              </form>
+              <form method="POST" action="/admin/delete/{{ user.id }}" style="display:inline;" 
+                    onsubmit="return confirm('Are you sure you want to delete this user?');">
+                <button type="submit" class="btn">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Group Users -->
   <div class="card">
     <h3>Group Users</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>Email</th>
-          <th>Group</th>
-          <th>Subscription Type</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for user in users if user.group_id %}
-        <tr>
-          <td>{{ user.email }}</td>
-          <td>{{ user.group_id }}</td>
-          <td>{{ user.subscription_type or '—' }}</td>
-          <td>
-            {% if not user.is_subscribed %}
-              <span class="status-pending">Pending</span>
-            {% elif user.is_active %}
-              <span class="status-active">Active</span>
-            {% else %}
-              <span class="status-inactive">Inactive</span>
-            {% endif %}
-          </td>
-          <td class="actions">
-            <form method="POST" action="/admin/delete/{{ user.id }}" style="display:inline;" 
-                  onsubmit="return confirm('Are you sure you want to delete this user?');">
-              <button type="submit" class="btn">Delete</button>
-            </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Group</th>
+            <th>Subscription Type</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users if user.group_id %}
+          <tr>
+            <td>{{ user.email }}</td>
+            <td>{{ user.group_id }}</td>
+            <td>{{ user.subscription_type or '—' }}</td>
+            <td>
+              {% if not user.is_subscribed %}
+                <span class="status-pending">Pending</span>
+              {% elif user.is_active %}
+                <span class="status-active">Active</span>
+              {% else %}
+                <span class="status-inactive">Inactive</span>
+              {% endif %}
+            </td>
+            <td class="actions">
+              <form method="POST" action="/admin/delete/{{ user.id }}" style="display:inline;" 
+                    onsubmit="return confirm('Are you sure you want to delete this user?');">
+                <button type="submit" class="btn">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
