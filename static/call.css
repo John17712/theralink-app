@@ -1,0 +1,225 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: #f5f7fa;
+  color: #333;
+}
+
+.container {
+  display: flex;
+  height: 100vh;
+}
+
+.sidebar {
+  width: 260px;
+  background-color: #004d40;
+  color: white;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  border-right: 2px solid #ccc;
+}
+
+.sidebar h2 {
+  margin-top: 0;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.sidebar li {
+  background-color: #00695c;
+  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sidebar li.active {
+  background-color: #26a69a;
+}
+
+.sidebar .session-title {
+  flex-grow: 1;
+}
+
+.sidebar .session-actions button {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 14px;
+  margin-left: 5px;
+  cursor: pointer;
+}
+
+.sidebar button#newCallSessionBtn {
+  background-color: #26a69a;
+  border: none;
+  padding: 10px;
+  color: white;
+  font-size: 15px;
+  border-radius: 5px;
+  margin-top: auto;
+  cursor: pointer;
+}
+
+.main {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  background-color: #fff;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+#startCallBtn,
+#endCallBtn,
+#newCallSessionBtn,
+#continueBtn {
+  cursor: pointer;
+  padding: 8px 14px;
+  font-size: 15px;
+  border-radius: 5px;
+  border: none;
+  transition: background 0.2s ease;
+}
+
+#startCallBtn:disabled,
+#endCallBtn:disabled {
+  background-color: #ccc;
+  color: #666;
+  cursor: not-allowed;
+}
+
+#startCallBtn:not(:disabled) {
+  background-color: #4caf50;
+  color: white;
+}
+
+#endCallBtn:not(:disabled) {
+  background-color: #e53935;
+  color: white;
+}
+
+.status {
+  margin-top: 15px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #004d40;
+}
+
+.transcript {
+  flex-grow: 1;
+  background-color: #f1f8e9;
+  margin-top: 15px;
+  padding: 15px;
+  border: 1px solid #c5e1a5;
+  border-radius: 6px;
+  overflow-y: auto;
+  max-height: 60vh;
+}
+
+.msg {
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  max-width: 80%;
+}
+
+.msg.user {
+  background-color: #dcedc8;
+  align-self: flex-end;
+}
+
+.msg.therapist {
+  background-color: #fff9c4;
+  align-self: flex-start;
+}
+
+.msg.user.speaking {
+  background-color: #e6f7ff;
+  border-left: 4px solid #4fc3f7;
+}
+
+.transcript-placeholder {
+  color: #888;
+  font-style: italic;
+  text-align: center;
+  padding-top: 100px;
+}
+
+.continue-button {
+  margin-top: 20px;
+  padding: 12px 20px;
+  background-color: #ff9800;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+  display: block;
+  width: fit-content;
+  align-self: center;
+  cursor: pointer;
+}
+
+/* Navbar styling */
+.navbar {
+  background-color: #1e1e1e;
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #333;
+}
+
+.nav-left, .nav-right {
+  display: flex;
+  align-items: center;
+}
+
+.nav-item {
+  color: white;
+  text-decoration: none;
+  margin-right: 20px;
+  font-weight: bold;
+  transition: color 0.2s ease-in-out;
+}
+
+.nav-item:hover {
+  color: #00ffaa;
+}
+
+.nav-item.active {
+  color: #3cb371;
+}
+
+.language-selector {
+  background: #2a2a2a;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 5px;
+}
+

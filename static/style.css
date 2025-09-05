@@ -1,0 +1,184 @@
+body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #0f2b23, #112831);
+    color: #ffffff;
+}
+
+/* Navbar */
+nav {
+    background: rgba(15, 43, 35, 0.95);
+    padding: 0.8rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(0, 255, 159, 0.2);
+}
+
+nav .logo {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #00ff9f;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+nav .nav-links {
+    display: flex;
+    gap: 1rem;
+}
+
+nav .nav-links a {
+    padding: 0.4rem 1rem;
+    border: 1px solid #00ff9f;
+    border-radius: 6px;
+    color: #00ff9f;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+nav .nav-links a:hover {
+    background: #00ff9f;
+    color: #0f2b23;
+}
+
+/* Layout wrapper for hero + pricing */
+.main-sections {
+    display: flex;
+    justify-content: center;
+    align-items: stretch; /* Equal height for both sections */
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin: 2rem auto;
+    max-width: 1100px;
+    padding: 0 1rem;
+}
+
+/* Hero & Pricing Boxes */
+.container, .pricing {
+    flex: 1 1 450px;
+    max-width: 500px;
+    background: rgba(20, 40, 35, 0.9);
+    border-radius: 12px;
+    box-shadow: 0 0 30px rgba(0, 255, 140, 0.15);
+    padding: 2rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Ensures bottom alignment of buttons */
+}
+
+/* Hero Section */
+h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.2rem;
+    color: #00ff9f;
+}
+
+.tagline {
+    font-size: 1rem;
+    color: #cccccc;
+    margin-bottom: 2rem;
+}
+
+.mode-selection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-grow: 1; /* Fills vertical space for proper centering */
+    justify-content: center;
+}
+
+.mode-selection label {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    color: #ffffff;
+}
+
+select {
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: none;
+    background-color: #1e4136;
+    color: #ffffff;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.buttons a button {
+    margin: 0.5rem;
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background: #00ff9f;
+    color: #0f2b23;
+    font-weight: bold;
+    transition: background 0.3s;
+}
+
+.buttons a button:hover {
+    background: #00d88c;
+}
+
+/* Pricing Section */
+.pricing h2 {
+    color: #00ff9f;
+    margin-bottom: 1rem;
+}
+
+.pricing .price {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #ffffff;
+    margin: 1rem 0;
+}
+
+.pricing ul {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+    color: #cccccc;
+    flex-grow: 1; /* Pushes button to bottom */
+}
+
+.pricing ul li {
+    margin: 0.5rem 0;
+}
+
+.pricing button {
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background: #00ff9f;
+    color: #0f2b23;
+    font-weight: bold;
+    transition: background 0.3s;
+}
+
+.pricing button:hover {
+    background: #00d88c;
+}
+
+/* Footer */
+footer {
+    margin-top: 2rem;
+    padding: 1rem;
+    text-align: center;
+    font-size: 0.9rem;
+    color: #cccccc;
+}
+
+footer a {
+    color: #00ff9f;
+    text-decoration: none;
+    margin: 0 0.5rem;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}

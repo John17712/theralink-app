@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="{{ lang|default('en') }}">
+<head>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="reset_password_title">Theralink • Reset Password</title>
+  <style>
+    html, body {
+      height: 100%; margin: 0;
+      font-family: 'Inter', system-ui, sans-serif;
+      background: linear-gradient(135deg, #0f2b23, #112831);
+      color: #fff;
+      display: flex; justify-content: center; align-items: center;
+    }
+    .card {
+      background: rgba(20, 40, 35, 0.95);
+      border: 1px solid rgba(0,255,159,0.15);
+      border-radius: 16px;
+      box-shadow: 0 0 30px rgba(0, 255, 140, 0.1);
+      padding: 32px;
+      width: 100%; max-width: 400px;
+      display: flex; flex-direction: column; gap: 20px;
+    }
+    .title {
+      text-align: center; font-size: 1.6rem;
+      font-weight: 800; color: #00ff9f; margin: 0;
+    }
+    .subtitle {
+      text-align: center; font-weight: 600; margin: -8px 0 0;
+      color: #bfead8;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    .form-group + .form-group { margin-top: 14px; }
+    label { font-weight: 600; font-size: 0.9rem; color: #bfead8; }
+    input {
+      padding: 12px; border-radius: 10px;
+      border: 1px solid rgba(0,255,159,0.15);
+      background: #0f2b23; color: #fff; outline: none;
+    }
+    input:focus { border-color: #00ff9f; }
+    .btn {
+      background: #00ff9f; color: #0f2b23; font-weight: 800;
+      border: none; border-radius: 10px; padding: 12px;
+      cursor: pointer; margin-top: 8px;
+    }
+    .btn:hover { background: #00d88c; }
+    .link { text-align: center; margin-top: 10px; }
+    .link a { color: #00ff9f; font-weight: 600; text-decoration: none; }
+    .link a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1 class="title">Theralink</h1>
+    <p class="subtitle" data-i18n="reset_password_title">Reset your password</p>
+
+    <form method="POST" action="{{ url_for('reset_password_request') }}">
+      <div class="form-group">
+        <label for="email" data-i18n="reset_password_email_label">Registered Email</label>
+        <input type="email" id="email" name="email"
+               data-i18n-placeholder="reset_password_placeholder"
+               placeholder="you@example.com" required>
+      </div>
+      <button type="submit" class="btn" data-i18n="reset_password_button">Send reset link</button>
+    </form>
+
+    <div class="link">
+      <a href="{{ url_for('login') }}" data-i18n="back_to_login">Back to Login</a>
+    </div>
+  </div>
+
+<script>
+  // Language auto-sync (no selector on this page)
+  async function loadTranslations(lang) {
+    try {
+      const res = await fetch(`/static/lang/${lang}.json`);
+      if (!res.ok) return;
+      const dict = await res.json();
+
+      // Update texts
+      document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        if (dict[key]) el.textContent = dict[key];
+      });
+
+      // Update placeholders
+      document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+        const key = el.getAttribute("data-i18n-placeholder");
+        if (dict[key]) el.setAttribute("placeholder", dict[key]);
+      });
+
+      // Handle RTL (Arabic, etc.)
+      document.body.setAttribute("dir", lang === "ar" ? "rtl" : "ltr");
+    } catch (e) { console.error("i18n load failed", e); }
+  }
+
+  (function initLanguage(){
+    const saved = localStorage.getItem("selectedLanguage") || "{{ lang|default('en') }}";
+    loadTranslations(saved);
+  })();
+</script>
+
+<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Subscribe - TheraLink</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    .subscribe-container {
+      max-width: 600px;
+      margin: 80px auto;
+      padding: 30px;
+      background: rgba(15, 43, 35, 0.95);
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.3);
+    }
+    .subscribe-container h1 {
+      color: #00ff9f;
+      font-size: 2rem;
+      margin-bottom: 15px;
+    }
+    .subscribe-container p {
+      font-size: 1.1rem;
+      color: #eee;
+      margin-bottom: 20px;
+    }
+    .subscribe-container button {
+      background: #00ff9f;
+      color: #0f2b23;
+      font-weight: 600;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+    .subscribe-container button:hover {
+      background: #00d88c;
+    }
+
+    .brand-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  margin-right: 20px;
+}
+.brand-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #00ff9f;
+}
+.brand-link:hover .brand-name {
+  color: #00d88c;
+}
+ .navbar {
+  background-color: rgba(15, 43, 35, 0.95);
+  padding: 10px 10px;
+  height: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(0,255,159,0.2);
+}
+
+.nav-left, .nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-item {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.nav-item:hover, .nav-item.active {
+  color: #00ff9f;
+}
+
+
+    .logo-img {
+     height: 32px;
+     margin-right: 8px;
+     vertical-align: middle;
+}
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="nav-left">
+    <a href="/" class="brand-link">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="TheraLink Logo" class="logo-img">
+      <span class="brand-name">TheraLink</span>
+    </a>
+  </div>
+  <div class="nav-right">
+    <a href="/dashboard" class="nav-item">Dashboard</a>
+    <a href="/logout" class="nav-item">Logout</a>
+  </div>
+</nav>
+
+<!-- Subscribe Box -->
+<div class="subscribe-container">
+  <h1>Subscribe to TheraLink</h1>
+  <p>Unlock unlimited chat & call sessions for only <strong>$10/month</strong>.</p>
+  <button id="checkout-button">Subscribe Now</button>
+</div>
+
+<!-- Footer -->
+<footer>
+  <a href="/terms">Terms & Conditions</a> |
+  <a href="/privacy">Privacy Policy</a>
+</footer>
+
+<script>
+  const stripe = Stripe("{{ publishable_key }}");
+  document.getElementById("checkout-button").addEventListener("click", () => {
+    fetch("/create-checkout-session", { method: "POST" })
+      .then(response => response.json())
+      .then(session => stripe.redirectToCheckout({ sessionId: session.id }))
+      .then(result => { if (result.error) alert(result.error.message); });
+  });
+</script>
+
+</body>
+</html>

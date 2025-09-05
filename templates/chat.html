@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="{{ lang|default('en') }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title data-i18n="chat_title">Theralink Chat</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='chat.css') }}" />
+
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f2b23, #112831);
+      color: #fff;
+      overflow: hidden;
+    }
+
+    /* ---------- Navbar ---------- */
+    .navbar {
+      background-color: rgba(15, 43, 35, 0.95);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(0,255,159,0.2);
+      position: relative;
+      z-index: 1000;
+    }
+    .nav-left, .nav-right { display: flex; align-items: center; gap: 16px; }
+    .nav-item { color: #fff; text-decoration: none; font-weight: 600; }
+    .nav-item:hover, .nav-item.active { color: #00ff9f; }
+    .language-selector {
+      background: #1e4136; color: #fff; border: none; padding: 6px 10px; border-radius: 6px;
+    }
+    .navbar-disclaimer { color: #bfead8; font-weight: 600; font-style: italic; }
+
+    /* Menu button */
+    .menu-btn {
+      background: none;
+      border: none;
+      color: #00ff9f;
+      font-size: 1.6rem;
+      cursor: pointer;
+      margin-right: 12px;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+    .menu-btn:hover {
+      background: rgba(0,255,159,0.1);
+    }
+
+    /* Dropdown links */
+    .nav-links {
+      display: flex;
+      flex-direction: column;
+      position: absolute;
+      top: 60px;
+      left: 20px;
+      background: rgba(20,40,35,0.95);
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.3s ease;
+    }
+    .nav-links.show {
+      max-height: 300px;
+      opacity: 1;
+    }
+    .nav-links a {
+      margin: 6px 0;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .nav-links a:hover,
+    .nav-links a.active {
+      color: #00ff9f;
+    }
+
+    /* ---------- Layout ---------- */
+    .container {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 44px;
+      height: calc(100vh - 60px);
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .sidebar {
+      background: rgba(20, 40, 35, 0.9);
+      border: 1px solid rgba(0,255,159,0.1);
+      border-radius: 12px;
+      box-shadow: 0 0 30px rgba(0, 255, 140, 0.1);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .sidebar h2 { margin: 0 0 8px 0; color: #00ff9f; font-size: 1.1rem; }
+    #sessionList { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; }
+    #sessionList li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-radius: 8px; cursor: pointer; }
+    #sessionList li:hover { background: rgba(0,255,159,0.08); }
+    #sessionList li.active { background: rgba(0,255,159,0.14); }
+    .session-title { font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .session-actions button { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 1rem; }
+
+    #modeSelector {
+      margin-bottom: 10px;
+      background: #0f2b23;
+      border: 1px solid rgba(0,255,159,0.2);
+      border-radius: 8px;
+      padding: 6px 8px;
+      color: #fff;
+    }
+
+    #newSessionBtn {
+      margin-top: 10px;
+      background: #00ff9f; color: #0f2b23;
+      font-weight: 700; border: 0; border-radius: 10px;
+      padding: 10px 12px; cursor: pointer;
+    }
+    #newSessionBtn:hover { background: #00d88c; }
+
+    .chat-container {
+      background: rgba(20, 40, 35, 0.9);
+      border: 1px solid rgba(0,255,159,0.1);
+      border-radius: 12px;
+      box-shadow: 0 0 30px rgba(0, 255, 140, 0.1);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .banner {
+      margin-bottom: 10px;
+      background: rgba(0,255,159,0.1);
+      padding: 8px;
+      border-radius: 8px;
+      color: #eafff4;
+      font-size: 0.9rem;
+    }
+
+    .chat-box {
+      background: #0f2b23;
+      border: 1px solid rgba(0,255,159,0.1);
+      border-radius: 10px;
+      padding: 12px;
+      flex: 1;
+      overflow-y: auto;
+      color: #eafff4;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .welcome-message { color: #bfead8; text-align: center; }
+
+    .chat-input {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .chat-input textarea {
+      background: #0f2b23; color: #fff;
+      border: 1px solid rgba(0,255,159,0.15);
+      border-radius: 10px; padding: 10px;
+      min-height: 60px; resize: vertical; outline: none;
+    }
+    .chat-input button {
+      background: #00ff9f; color: #0f2b23;
+      border: none; border-radius: 10px;
+      padding: 10px 14px; font-weight: 700; cursor: pointer;
+    }
+    .chat-input button:hover { background: #00d88c; }
+
+    .brand {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #00ff9f;
+      margin-right: 20px;
+      letter-spacing: 1px;
+    }
+    .logo-img { height: 32px; margin-right: 8px; vertical-align: middle; }
+    .brand-link { display: flex; align-items: center; text-decoration: none; margin-right: 20px; }
+    .brand-name { font-size: 1.2rem; font-weight: 700; color: #00ff9f; }
+    .brand-link:hover .brand-name { color: #00d88c; }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="nav-left">
+    <!-- Menu button -->
+    <button class="menu-btn" id="menuBtn">☰</button>
+
+    <!-- Brand -->
+    <a href="{{ url_for('dashboard') }}" class="brand-link">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="TheraLink Logo" class="logo-img">
+      <span class="brand-name">TheraLink</span>
+    </a>
+  </div>
+
+  <!-- Dropdown menu -->
+  <div class="nav-links" id="navLinks">
+    <a href="/dashboard" class="nav-item" data-i18n="nav_home">Home</a>
+    <a href="/chat_page" class="nav-item active" data-i18n="nav_chat">Chat</a>
+    <a href="/call_page" class="nav-item" data-i18n="nav_call">Call</a>
+  </div>
+
+  <div class="nav-right">
+    <select id="languageSelector" class="language-selector" aria-label="Language">
+      <option value="en">English</option>
+      <option value="es">Español</option>
+      <option value="fr">Français</option>
+      <option value="sw">Swahili</option>
+      <option value="de">Deutsch</option>
+      <option value="it">Italiano</option>
+      <option value="pt">Português</option>
+      <option value="zh">中文</option>
+      <option value="ja">日本語</option>
+      <option value="ko">한국어</option>
+      <option value="hi">हिन्दी</option>
+      <option value="ru">Русский</option>
+      <option value="ar">العربية</option>
+      <option value="zu">isiZulu</option>
+    </select>
+    <span class="navbar-disclaimer" data-i18n="chat_disclaimer">Chat replies in your selected language.</span>
+  </div>
+</nav>
+
+<div class="container">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <h2 data-i18n="sessions">Sessions</h2>
+    <select id="modeSelector" aria-label="Mode">
+      <option value="normal" data-i18n="mode_normal">Normal Mode</option>
+      <option value="incognito" data-i18n="mode_incognito">Incognito Mode</option>
+    </select>
+    <ul id="sessionList"></ul>
+    <button id="newSessionBtn" data-i18n="new_session">+ New Session</button>
+  </aside>
+
+  <!-- Chat Interface -->
+  <main class="chat-container">
+    <div id="incognitoBanner" class="banner" style="display:none;" data-i18n="incognito_banner">
+      🔒 You are in Incognito Mode. This session will not be saved.
+    </div>
+    <div id="chatBox" class="chat-box">
+      <div class="welcome-message" id="welcomeMessage">
+        <span data-i18n="chat_ready">Your personal chat is ready.</span><br>
+        <span data-i18n="chat_start">Start the conversation when you're ready.</span>
+      </div>
+    </div>
+    <div class="chat-input">
+      <textarea id="messageInput" data-i18n-placeholder="chat_placeholder" placeholder="Type your message..." disabled></textarea>
+      <button id="sendBtn" disabled data-i18n="send_btn">Send</button>
+    </div>
+  </main>
+</div>
+
+<!-- Scripts -->
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const menuBtn = document.getElementById("menuBtn");
+  const navLinks = document.getElementById("navLinks");
+
+  // Toggle menu
+  menuBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    navLinks.classList.toggle("show");
+  });
+
+  // Close menu when clicking outside
+  document.addEventListener("click", (e) => {
+    if (navLinks.classList.contains("show") && !navLinks.contains(e.target) && e.target !== menuBtn) {
+      navLinks.classList.remove("show");
+    }
+  });
+
+  // Close menu after clicking a link
+  navLinks.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", () => navLinks.classList.remove("show"));
+  });
+});
+</script>
+
+<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+<script src="{{ url_for('static', filename='chat.js') }}"></script>
+</body>
+</html>

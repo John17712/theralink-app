@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="{{ lang|default('en') }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+
+  <title>Theralink • Login</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f2b23, #112831);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .card {
+      background: rgba(20, 40, 35, 0.95);
+      border: 1px solid rgba(0,255,159,0.15);
+      border-radius: 16px;
+      box-shadow: 0 0 30px rgba(0, 255, 140, 0.1);
+      padding: 32px;
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .title {
+      margin: 0;
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #00ff9f;
+    }
+    .subtitle {
+      margin: -6px 0 0 0;
+      text-align: center;
+      font-weight: 600;
+      color: #bfead8;
+      opacity: .9;
+    }
+    .flash { padding: 10px 12px; border-radius: 10px; font-weight: 600; }
+    .flash.success { background: rgba(0,255,159,0.12); color: #d6ffe7; border: 1px solid rgba(0,255,159,0.25); }
+    .flash.error { background: rgba(255,77,77,0.12); color: #ffd6d6; border: 1px solid rgba(255,77,77,0.35); }
+    .flash.info { background: rgba(255,255,255,0.08); color: #e7f7f1; border: 1px solid rgba(255,255,255,0.12); }
+
+    form { display: flex; flex-direction: column; gap: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    .form-group + .form-group { margin-top: 6px; } /* extra breathing space between inputs */
+    label { font-weight: 600; font-size: 0.9rem; color: #bfead8; }
+    input {
+      padding: 12px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(0,255,159,0.15);
+      background: #0f2b23;
+      color: #fff;
+      outline: none;
+    }
+    input:focus { border-color: #00ff9f; }
+
+    .row-between {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: -4px;
+    }
+    .link {
+      color: #00ff9f; font-weight: 600; text-decoration: none;
+    }
+    .link:hover { text-decoration: underline; }
+
+    .btn {
+      width: 100%;
+      background: #00ff9f; color: #0f2b23; font-weight: 800;
+      border: none; border-radius: 10px; padding: 12px; cursor: pointer;
+      margin-top: 6px;
+    }
+    .btn:hover { background: #00d88c; }
+    .muted {
+      text-align: center; font-size: 0.9rem; color: #bfead8;
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1 class="title">Theralink</h1>
+  <p class="subtitle" data-i18n="login_title">Login</p>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="flash {{ category }}">
+        {{ message }}
+
+        {% if "inactive" in message.lower() %}
+          <!-- Show renew button if account is frozen -->
+          <div style="margin-top:10px; text-align:center;">
+            <a href="{{ url_for('renew_subscription') }}" 
+               class="btn" 
+               style="display:inline-block; background:#ffcc00; color:#0f2b23; padding:10px 20px; border-radius:8px; font-weight:bold; text-decoration:none;">
+              🔄 Renew Subscription
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+
+
+  <form method="POST" action="{{ url_for('login') }}" novalidate>
+    <div class="form-group">
+      <label for="email" data-i18n="login_email">Email</label>
+      <input type="email" id="email" name="email" required
+             data-i18n-placeholder="login_email_placeholder"
+             placeholder="Enter your email" />
+    </div>
+
+    <div class="form-group">
+      <label for="password" data-i18n="login_password">Password</label>
+      <input type="password" id="password" name="password" required
+             data-i18n-placeholder="login_password_placeholder"
+             placeholder="Enter your password" />
+    </div>
+
+    <div style="text-align:center; margin-top: 20px;">
+      <a href="{{ url_for('admin_login') }}" class="link" style="display:inline-flex; align-items:center; gap:8px; font-weight:700;">
+    🔑 Admin Login
+      </a>
+    </div>
+
+
+    <div class="row-between">
+      <span></span>
+      <a class="link" href="{{ url_for('reset_password_request') }}"
+         data-i18n="forgot_password">Forgot password?</a>
+    </div>
+
+    <button type="submit" class="btn" data-i18n="login_button">Login</button>
+  </form>
+
+  <div class="muted">
+    <span data-i18n="no_account">Don’t have an account?</span>
+    &nbsp;<a class="link" href="{{ url_for('signup') }}" data-i18n="signup_prompt">Sign up</a>
+  </div>
+</div>
+
+
+  <script>
+    // Language auto-sync (no selector here)
+    async function loadTranslations(lang) {
+      try {
+        const res = await fetch(`/static/lang/${lang}.json`);
+        if (!res.ok) return;
+        const dict = await res.json();
+        document.querySelectorAll("[data-i18n]").forEach(el => {
+          const key = el.getAttribute("data-i18n");
+          if (dict[key]) el.textContent = dict[key];
+        });
+        document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+          const key = el.getAttribute("data-i18n-placeholder");
+          if (dict[key]) el.setAttribute("placeholder", dict[key]);
+        });
+        document.body.setAttribute("dir", lang === "ar" ? "rtl" : "ltr");
+      } catch (e) { console.error(e); }
+    }
+    (function initLanguage(){
+      const saved = localStorage.getItem("selectedLanguage") || "{{ lang|default('en') }}";
+      loadTranslations(saved);
+    })();
+  </script>
+
+  <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+
+</body>
+</html>

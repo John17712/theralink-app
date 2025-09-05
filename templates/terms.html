@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="{{ lang|default('en') }}">
+<head>
+  <meta charset="UTF-8">
+  <title data-i18n="terms_title">Terms and Conditions</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+  <style>
+    html, body {
+      height: 100%; margin: 0;
+      font-family: 'Inter', system-ui, sans-serif;
+      background: linear-gradient(135deg, #0f2b23, #112831);
+      color: #fff; display: flex; justify-content: center; align-items: flex-start;
+      padding: 40px;
+    }
+    .card {
+      background: rgba(20, 40, 35, 0.95);
+      border: 1px solid rgba(0,255,159,0.15);
+      border-radius: 16px;
+      box-shadow: 0 0 30px rgba(0,255,140,0.1);
+      padding: 32px;
+      max-width: 800px;
+      width: 100%;
+    }
+    h1 { color: #00ff9f; margin-top: 0; }
+    h2 { color: #bfead8; margin-top: 24px; }
+    p { line-height: 1.6; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1 data-i18n="terms_title">Terms and Conditions</h1>
+
+    <p data-i18n="terms_intro">
+      Welcome to TheraLink. These Terms and Conditions govern your access to and use of our services. 
+      By using our platform, you agree to abide by these Terms in full.
+    </p>
+
+    <h2 data-i18n="terms_use_title">Use of Service</h2>
+    <p data-i18n="terms_use_text">
+      Our services are intended for personal, non-commercial use. You agree not to misuse, modify, copy, or disrupt the platform. 
+      Any unauthorized use, including attempts to interfere with security or performance, is strictly prohibited.
+    </p>
+
+    <h2 data-i18n="terms_account_title">Account Responsibility</h2>
+    <p data-i18n="terms_account_text">
+      You are responsible for maintaining the confidentiality of your account credentials. 
+      Any activity that occurs under your account will be deemed your responsibility.
+    </p>
+
+    <h2 data-i18n="terms_liability_title">Limitation of Liability</h2>
+    <p data-i18n="terms_liability_text">
+      TheraLink provides AI-driven support and does not replace licensed professional medical or mental health care. 
+      We are not liable for any actions, outcomes, or decisions you make based on use of our services.
+    </p>
+
+    <h2 data-i18n="terms_changes_title">Modifications to Terms</h2>
+    <p data-i18n="terms_changes_text">
+      We reserve the right to modify or update these Terms at any time. Continued use of our services 
+      after changes have been posted indicates your acceptance of the revised Terms.
+    </p>
+
+    <h2 data-i18n="terms_termination_title">Termination of Access</h2>
+    <p data-i18n="terms_termination_text">
+      We may suspend or terminate your access to the platform if you breach these Terms or misuse the service.
+    </p>
+
+    <h2 data-i18n="terms_contact_title">Contact</h2>
+    <p data-i18n="terms_contact_text">
+      If you have questions or concerns about these Terms, please contact us at support@theralink.com.
+    </p>
+  </div>
+
+  <script src="/static/js/i18n.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const lang = localStorage.getItem("selectedLanguage") || "en";
+    loadLanguage(lang);
+  });
+</script>
+
+ <script>
+    // Language auto-sync (no selector here)
+    async function loadTranslations(lang) {
+      try {
+        const res = await fetch(`/static/lang/${lang}.json`);
+        if (!res.ok) return;
+        const dict = await res.json();
+        document.querySelectorAll("[data-i18n]").forEach(el => {
+          const key = el.getAttribute("data-i18n");
+          if (dict[key]) el.textContent = dict[key];
+        });
+        document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+          const key = el.getAttribute("data-i18n-placeholder");
+          if (dict[key]) el.setAttribute("placeholder", dict[key]);
+        });
+        document.body.setAttribute("dir", lang === "ar" ? "rtl" : "ltr");
+      } catch (e) { console.error(e); }
+    }
+    (function initLanguage(){
+      const saved = localStorage.getItem("selectedLanguage") || "{{ lang|default('en') }}";
+      loadTranslations(saved);
+    })();
+  </script>
+
+</body>
+</html>

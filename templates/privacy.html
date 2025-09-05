@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="{{ lang|default('en') }}">
+<head>
+  <meta charset="UTF-8">
+  <title data-i18n="privacy_title">Privacy Policy</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+  <style>
+    html, body {
+      height: 100%; margin: 0;
+      font-family: 'Inter', system-ui, sans-serif;
+      background: linear-gradient(135deg, #0f2b23, #112831);
+      color: #fff;
+      display: flex; justify-content: center; align-items: center;
+      padding: 20px;
+    }
+    .card {
+      background: rgba(20, 40, 35, 0.95);
+      border: 1px solid rgba(0,255,159,0.15);
+      border-radius: 16px;
+      box-shadow: 0 0 30px rgba(0, 255, 140, 0.1);
+      padding: 32px;
+      width: 100%; max-width: 800px;
+      overflow-y: auto;
+      max-height: 90vh;
+    }
+    h1, h2 { color: #00ff9f; margin-top: 0; }
+    h2 { margin-top: 20px; font-size: 1.2rem; }
+    p { color: #bfead8; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1 data-i18n="privacy_title">Privacy Policy</h1>
+
+    <p data-i18n="privacy_intro">
+      Your privacy is important to us. This Privacy Policy explains what information we collect, how we use it, and the measures we take to protect your data.
+    </p>
+
+    <h2 data-i18n="privacy_collect_title">Information We Collect</h2>
+    <p data-i18n="privacy_collect_text">
+      We may collect account details (such as your name and email), session data, and usage statistics. 
+      Sensitive information shared during sessions is treated as confidential.
+    </p>
+
+    <h2 data-i18n="privacy_use_title">How We Use Your Information</h2>
+    <p data-i18n="privacy_use_text">
+      We use collected data to provide, maintain, and improve our services. 
+      This includes personalizing your experience, ensuring platform functionality, and supporting safety and security.
+    </p>
+
+    <h2 data-i18n="privacy_share_title">Sharing of Information</h2>
+    <p data-i18n="privacy_share_text">
+      We do not sell or rent your personal information. Data may only be shared with trusted third-party providers 
+      when necessary to deliver services (e.g., hosting) or when required by law.
+    </p>
+
+    <h2 data-i18n="privacy_protect_title">Data Protection</h2>
+    <p data-i18n="privacy_protect_text">
+      We implement reasonable technical and organizational measures to safeguard your information. 
+      However, no online system can guarantee absolute security.
+    </p>
+
+    <h2 data-i18n="privacy_retention_title">Data Retention</h2>
+    <p data-i18n="privacy_retention_text">
+      We retain your information only for as long as necessary to fulfill the purposes outlined in this policy, 
+      or as required by law.
+    </p>
+
+    <h2 data-i18n="privacy_changes_title">Changes to Policy</h2>
+    <p data-i18n="privacy_changes_text">
+      We may update this Privacy Policy from time to time. You will be notified of significant changes, 
+      and continued use of the platform will indicate acceptance.
+    </p>
+
+    <h2 data-i18n="privacy_contact_title">Contact Us</h2>
+    <p data-i18n="privacy_contact_text">
+      For privacy-related questions, concerns, or requests, please contact us at support@theralink.com.
+    </p>
+  </div>
+
+  <script src="/static/js/i18n.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const lang = localStorage.getItem("selectedLanguage") || "en";
+    loadLanguage(lang);
+  });
+</script>
+
+ <script>
+    // Language auto-sync (no selector here)
+    async function loadTranslations(lang) {
+      try {
+        const res = await fetch(`/static/lang/${lang}.json`);
+        if (!res.ok) return;
+        const dict = await res.json();
+        document.querySelectorAll("[data-i18n]").forEach(el => {
+          const key = el.getAttribute("data-i18n");
+          if (dict[key]) el.textContent = dict[key];
+        });
+        document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+          const key = el.getAttribute("data-i18n-placeholder");
+          if (dict[key]) el.setAttribute("placeholder", dict[key]);
+        });
+        document.body.setAttribute("dir", lang === "ar" ? "rtl" : "ltr");
+      } catch (e) { console.error(e); }
+    }
+    (function initLanguage(){
+      const saved = localStorage.getItem("selectedLanguage") || "{{ lang|default('en') }}";
+      loadTranslations(saved);
+    })();
+  </script>
+
+</body>
+</html>

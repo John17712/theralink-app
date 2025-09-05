@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TheraLink</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="nav-left">
+    <a href="/" class="brand-link">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="TheraLink Logo" class="logo-img">
+      <span class="brand-name">TheraLink</span>
+    </a>
+  </div>
+  <div class="nav-right">
+    <a href="/login" class="nav-item" data-i18n="nav_login">Login</a>
+    <a href="/signup" class="nav-item" data-i18n="nav_signup">Sign Up</a>
+    <select id="languageSelector" class="language-selector">
+      <option value="en">English</option>
+      <option value="es">Español</option>
+      <option value="fr">Français</option>
+      <option value="sw">Swahili</option>
+      <option value="de">Deutsch</option>
+      <option value="it">Italiano</option>
+      <option value="pt">Português</option>
+      <option value="zh">中文</option>
+      <option value="ja">日本語</option>
+      <option value="ko">한국어</option>
+      <option value="hi">हिन्दी</option>
+      <option value="ru">Русский</option>
+      <option value="ar">العربية</option>
+      <option value="zu">isiZulu</option>
+    </select>
+  </div>
+</nav>
+
+
+<style>
+ .navbar {
+  background-color: rgba(15, 43, 35, 0.95);
+  padding: 10px 10px;
+  height: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(0,255,159,0.2);
+}
+
+.nav-left, .nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-item {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.nav-item:hover, .nav-item.active {
+  color: #00ff9f;
+}
+
+.language-selector {
+  background: #1e4136;
+  color: #fff;
+  border: none;
+  padding: 7px 7px;
+  border-radius: 6px;
+  margin-top: 25px;
+
+  /* ✅ Fix alignment */
+  height: 36px;              /* match text height */
+  display: flex;
+  align-items: center;       /* vertical centering */
+  font-size: 0.95rem;        /* match nav text size */
+}
+
+
+.logo-img {
+  height: 32px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.brand-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  margin-right: 20px;
+}
+.brand-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #00ff9f;
+}
+.brand-link:hover .brand-name {
+  color: #00d88c;
+}
+
+/* Main section container */
+.main-sections {
+  margin-bottom: 5px;   /* reduce from 40px to 20px */
+  padding:10px 5px;    /* reduce padding slightly */
+}
+
+/* Footer */
+footer {
+  padding: 4px 0;       /* reduce height */
+  margin-top: 1px;      /* bring it closer */
+}
+
+.tagline {
+  margin-bottom: 8px;
+}
+
+</style>
+
+
+<!-- Hero + Pricing Layout -->
+<div class="main-sections">
+  <!-- Hero / Trial Section -->
+<div class="container">
+  <div>
+    <header>
+      <h1 data-i18n="hero_welcome">Welcome to TheraLink</h1>
+      <p class="tagline">Private, intelligent conversations, anytime, anywhere.</p>
+    </header>
+
+    <div class="mode-selection">
+      <p data-i18n="hero_trial_text">Try our free trial: 50 messages or 5 minutes call before signup</p>
+
+      <div class="buttons">
+        <a id="chatBtn" href="/trial_chat"><button data-i18n="hero_try_chat">💬 Try Chat</button></a>
+        <a id="callBtn" href="/trial_call"><button data-i18n="hero_try_call">📞 Try Call</button></a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Pricing Section -->
+<div class="pricing">
+  <div>
+    <h2 data-i18n="pricing_title">Unlock Unlimited Access</h2>
+    <div class="price" data-i18n="pricing_price">$10/month</div>
+    <ul>
+      <li data-i18n="pricing_feature_chat">✅ Unlimited chat sessions</li>
+      <li data-i18n="pricing_feature_call">✅ Unlimited voice call sessions</li>
+      <li data-i18n="pricing_feature_multi">✅ Multi-language support</li>
+      <li data-i18n="pricing_feature_privacy">✅ Privacy-focused & secure</li>
+    </ul>
+   <a href="/signup"><button data-i18n="pricing_button">Subscribe Now</button></a>
+  </div>
+</div>
+
+
+<!-- Footer -->
+<!-- Footer -->
+<footer>
+  <a href="/terms" data-i18n="footer_terms">Terms & Conditions</a> |
+  <a href="/privacy" data-i18n="footer_privacy">Privacy Policy</a>
+</footer>
+
+
+<script>
+  const languageSelector = document.getElementById('languageSelector');
+  const savedLang = localStorage.getItem('selectedLanguage') || '{{ lang|default("en") }}';
+  languageSelector.value = savedLang;
+
+  async function loadLanguage(lang) {
+    try {
+      const res = await fetch(`/static/lang/${lang}.json`);
+      if (!res.ok) throw new Error("Could not load translations");
+      const dict = await res.json();
+      applyTranslations(dict);
+      localStorage.setItem('selectedLanguage', lang);
+    } catch (err) { console.error("Error loading language:", err); }
+  }
+
+  function applyTranslations(dict) {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (dict[key]) {
+        if (["input","textarea"].includes(el.tagName.toLowerCase())) {
+          el.placeholder = dict[key];
+        } else {
+          el.textContent = dict[key];
+        }
+      }
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      if (dict[key]) el.setAttribute('placeholder', dict[key]);
+    });
+    document.body.setAttribute('dir', (languageSelector.value === 'ar') ? 'rtl' : 'ltr');
+  }
+
+  languageSelector.addEventListener('change', () => loadLanguage(languageSelector.value));
+  loadLanguage(savedLang);
+</script>
+
+<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+  const stripe = Stripe("{{ publishable_key }}");
+
+  document.getElementById("checkout-button").addEventListener("click", () => {
+    fetch("/create-checkout-session", { method: "POST" })
+      .then(response => response.json())
+      .then(session => stripe.redirectToCheckout({ sessionId: session.id }))
+      .then(result => {
+        if (result.error) {
+          alert(result.error.message);
+        }
+      });
+  });
+</script>
+
+
+</body>
+</html>
