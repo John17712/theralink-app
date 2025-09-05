@@ -420,13 +420,9 @@ def load_user(user_id):
 # ========================================================================
 # OPENAI CLIENT (GROQ)
 # ========================================================================
-client = Groq(
-    api_key=os.getenv("GROQ_API_KEY"),
-    base_url="https://api.groq.com/openai/v1"
-)
-MODEL = "llama-3.1-8b-instant"
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+MODEL = "llama-3.1-8b-instant"   # or "llama-3.1-70b-versatile" if you want stronger model
 user_sessions = {}
-
 # ========================================================================
 # TRIAL CONFIG
 # ========================================================================
