@@ -28,15 +28,14 @@
       border-bottom: 1px solid rgba(0,255,159,0.2);
       position: relative;
       z-index: 1000;
-      flex-wrap: wrap; /* ✅ allows wrapping */
     }
-    .nav-left, .nav-right { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .nav-left, .nav-right { display: flex; align-items: center; gap: 16px; }
     .nav-item { color: #fff; text-decoration: none; font-weight: 600; }
     .nav-item:hover, .nav-item.active { color: #00ff9f; }
     .language-selector {
       background: #1e4136; color: #fff; border: none; padding: 6px 10px; border-radius: 6px;
     }
-    .navbar-disclaimer { color: #bfead8; font-weight: 600; font-style: italic; font-size: 0.85rem; }
+    .navbar-disclaimer { color: #bfead8; font-weight: 600; font-style: italic; }
 
     /* Menu button */
     .menu-btn {
@@ -49,7 +48,9 @@
       padding: 4px 8px;
       border-radius: 6px;
     }
-    .menu-btn:hover { background: rgba(0,255,159,0.1); }
+    .menu-btn:hover {
+      background: rgba(0,255,159,0.1);
+    }
 
     /* Dropdown links */
     .nav-links {
@@ -62,14 +63,26 @@
       padding: 12px 20px;
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+
       max-height: 0;
       opacity: 0;
       overflow: hidden;
       transition: max-height 0.3s ease, opacity 0.3s ease;
     }
-    .nav-links.show { max-height: 300px; opacity: 1; }
-    .nav-links a { margin: 6px 0; color: #fff; text-decoration: none; font-weight: 600; }
-    .nav-links a:hover, .nav-links a.active { color: #00ff9f; }
+    .nav-links.show {
+      max-height: 300px;
+      opacity: 1;
+    }
+    .nav-links a {
+      margin: 6px 0;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .nav-links a:hover,
+    .nav-links a.active {
+      color: #00ff9f;
+    }
 
     /* ---------- Layout ---------- */
     .container {
@@ -170,73 +183,67 @@
     }
     .chat-input button:hover { background: #00d88c; }
 
+    .brand {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #00ff9f;
+      margin-right: 20px;
+      letter-spacing: 1px;
+    }
     .logo-img { height: 32px; margin-right: 8px; vertical-align: middle; }
     .brand-link { display: flex; align-items: center; text-decoration: none; margin-right: 20px; }
     .brand-name { font-size: 1.2rem; font-weight: 700; color: #00ff9f; }
     .brand-link:hover .brand-name { color: #00d88c; }
 
-    /* ---------- Responsive ---------- */
-    @media (max-width: 992px) {
-      .container { grid-template-columns: 1fr; gap: 20px; }
-      .sidebar { max-height: 240px; overflow-y: auto; }
-    }
-    @media (max-width: 576px) {
-      .navbar { padding: 10px; }
-      .logo-img { height: 24px; } /* ✅ shrink logo */
-      .controls, .chat-input { flex-direction: column; gap: 8px; }
-      .chat-input { grid-template-columns: 1fr; }
-      .chat-input button, .chat-input textarea { width: 100%; }
-      .chat-box { font-size: 0.9rem; }
-    }
+    /* ---------- Mobile Responsive Fix ---------- */
+@media (max-width: 768px) {
+  .navbar {
+    flex-wrap: wrap;
+    padding: 10px 14px;
+  }
+
+  .nav-left, .nav-right {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .nav-links {
+    position: static;
+    flex-direction: column;
+    background: transparent;
+    padding: 0;
+    box-shadow: none;
+    max-height: none;
+    opacity: 1;
+  }
+
+  .nav-links a {
+    display: block;
+    margin: 4px 0;
+  }
+
+  .language-selector {
+    width: 100%;
+  }
+
+  .container {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .sidebar {
+    order: 2;
+    min-height: auto;
+  }
+
+  .chat-container {
+    order: 1;
+  }
+}
+
   </style>
-</head>
-<body>
-
-<!-- Navbar -->
-<nav class="navbar">
-  <div class="nav-left">
-    <button class="menu-btn" id="menuBtn">☰</button>
-    <a href="{{ url_for('dashboard') }}" class="brand-link">
-      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="TheraLink Logo" class="logo-img">
-      <span class="brand-name">TheraLink</span>
-    </a>
-  </div>
-
-  <div class="nav-links" id="navLinks">
-    <a href="/dashboard" class="nav-item" data-i18n="nav_home">Home</a>
-    <a href="/chat_page" class="nav-item active" data-i18n="nav_chat">Chat</a>
-    <a href="/call_page" class="nav-item" data-i18n="nav_call">Call</a>
-  </div>
-
-  <div class="nav-right">
-    <select id="languageSelector" class="language-selector" aria-label="Language">
-      <option value="en">English</option>
-      <option value="es">Español</
-
-</head>
-<body>
-
-<!-- Navbar -->
-<nav class="navbar">
-  <div class="nav-left">
-    <button class="menu-btn" id="menuBtn">☰</button>
-    <a href="{{ url_for('dashboard') }}" class="brand-link">
-      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="TheraLink Logo" class="logo-img">
-      <span class="brand-name">TheraLink</span>
-    </a>
-  </div>
-
-  <div class="nav-links" id="navLinks">
-    <a href="/dashboard" class="nav-item" data-i18n="nav_home">Home</a>
-    <a href="/chat_page" class="nav-item active" data-i18n="nav_chat">Chat</a>
-    <a href="/call_page" class="nav-item" data-i18n="nav_call">Call</a>
-  </div>
-
-  <div class="nav-right">
-    <select id="languageSelector" class="language-selector" aria-label="Language">
-      <option value="en">English</option>
-      <option value="es">Español</
-
 </head>
 <body>
 
