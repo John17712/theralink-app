@@ -15,7 +15,7 @@ from flask import (
     Flask, render_template, request, jsonify,
     session, redirect, url_for, flash
 )
-from openai import OpenAI
+from groq import Groq
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import (
     LoginManager, UserMixin,
@@ -420,7 +420,7 @@ def load_user(user_id):
 # ========================================================================
 # OPENAI CLIENT (GROQ)
 # ========================================================================
-client = OpenAI(
+client = Groq(
     api_key=os.getenv("GROQ_API_KEY"),
     base_url="https://api.groq.com/openai/v1"
 )
