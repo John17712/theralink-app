@@ -856,3 +856,62 @@ function stopIOSLiveTranscription() {
 
   callStatus.innerText = "⏳ Processing...";
 }
+
+
+
+
+
+// TEST ONLY
+
+
+document.getElementById("testRecBtn").onclick = async () => {
+  try {
+    console.log("🎤 Starting test recording...");
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const options = { mimeType: "audio/mp4" }; // iOS-friendly
+    let recorder;
+
+    try {
+      recorder = new MediaRecorder(stream, options);
+    } catch (err) {
+      console.warn("❌ Fallback recorder:", err);
+      recorder = new MediaRecorder(stream);
+    }
+
+    const chunks = [];
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.push(e.data);
+    };
+
+    recorder.onstop = async () => {
+      const blob = new Blob(chunks, { type: "audio/mp4" });
+      console.log("📱 Test blob:", blob.size, blob.type);
+
+      if (blob.size === 0) {
+        alert("❌ Empty test blob — recording failed.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("audio", blob, "test.m4a");
+
+      const res = await fetch("/transcribe", { method: "POST", body: formData });
+      const data = await res.json();
+
+      console.log("📜 Test transcription response:", data);
+
+      if (data.text) {
+        alert("✅ Transcription: " + data.text);
+      } else {
+        alert("⚠️ No text: " + JSON.stringify(data));
+      }
+    };
+
+    recorder.start();
+    setTimeout(() => recorder.stop(), 3000); // stop after 3 seconds
+  } catch (err) {
+    console.error("❌ Test recording error:", err);
+    alert("❌ Could not start test recording: " + err.message);
+  }
+};
