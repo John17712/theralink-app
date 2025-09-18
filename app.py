@@ -1238,16 +1238,21 @@ def transcribe():
             return jsonify({"text": result.get("text", "").strip()})
         else:
             # 🔹 Production → use Groq Whisper API
-            result = client.audio.transcriptions.create(
-                model="whisper-1",
-                file=audio_file
-            )
-            return jsonify({"text": result.get("text", "").strip()})
+            try:
+                result = client.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=audio_file.stream   # safer for Flask uploads
+                )
+                return jsonify({"text": result.get("text", "").strip()})
+            except Exception as api_error:
+                app.logger.exception("Groq API transcription error")
+                return jsonify({
+                    "error": f"Groq API failed: {str(api_error)}"
+                }), 500
 
     except Exception as e:
-        app.logger.exception("Transcription error")
-        return jsonify({"error": "Transcription failed"}), 500
-
+        app.logger.exception("General transcription error")
+        return jsonify({"error": f"Transcription failed: {str(e)}"}), 500
 
 
 @app.route("/trial_transcribe", methods=["POST"])
