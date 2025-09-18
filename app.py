@@ -42,7 +42,7 @@ load_dotenv(env_path)
 
 
 # ✅ Load model once when the server starts
-model = whisper.load_model("base")  # can also use "tiny", "small", "medium", "large"
+#model = whisper.load_model("base")  # can also use "tiny", "small", "medium", "large"
 
 
 
@@ -1238,21 +1238,16 @@ def transcribe():
             return jsonify({"text": result.get("text", "").strip()})
         else:
             # 🔹 Production → use Groq Whisper API
-            try:
-                result = client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=audio_file.stream   # safer for Flask uploads
-                )
-                return jsonify({"text": result.get("text", "").strip()})
-            except Exception as api_error:
-                app.logger.exception("Groq API transcription error")
-                return jsonify({
-                    "error": f"Groq API failed: {str(api_error)}"
-                }), 500
+            transcript = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio_file.stream  # Flask stream → avoids temp save
+            )
+            return jsonify({"text": (transcript.text or "").strip()})
 
     except Exception as e:
-        app.logger.exception("General transcription error")
+        app.logger.exception("Transcription error")
         return jsonify({"error": f"Transcription failed: {str(e)}"}), 500
+
 
 
 @app.route("/trial_transcribe", methods=["POST"])
