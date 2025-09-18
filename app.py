@@ -11,6 +11,7 @@ from flask  import abort
 from flask_login import current_user
 from langdetect import detect
 
+
 from dotenv import load_dotenv
 from flask import (
     Flask, render_template, request, jsonify,
@@ -32,7 +33,6 @@ from libretranslatepy import LibreTranslateAPI
 import tempfile
 import whisper 
 
-
 # Path to your external .env file
 env_path = r"C:\Users\Professsor\Desktop\therapyapp.env\.env"
 
@@ -44,6 +44,8 @@ load_dotenv(env_path)
 # ✅ Load model once when the server starts
 model = whisper.load_model("base")  # can also use "tiny", "small", "medium", "large"
 
+
+
 # ========================================================================
 # CONFIG
 # ========================================================================
@@ -52,7 +54,21 @@ model = whisper.load_model("base")  # can also use "tiny", "small", "medium", "l
 # ========================================================================
 # OPENAI CLIENT (GROQ)
 # ========================================================================
+
+# Detect environment
+FLASK_ENV = os.getenv("FLASK_ENV", "production")
+
+
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+
+# Load local Whisper only in development
+if FLASK_ENV == "development":
+    import whisper
+    whisper_model = whisper.load_model("base")   # use "base" locally
+else:
+    whisper_model = None
+
 MODEL = "llama-3.3-70b-versatile"   # or "llama-3.1-70b-versatile" if you want stronger model
 user_sessions = {}
 
@@ -1209,26 +1225,30 @@ def transcribe():
 
         audio_file = request.files["audio"]
 
-        # Save file temporarily
-        temp_path = os.path.join("temp_audio.mp4")
-        audio_file.save(temp_path)
+        if FLASK_ENV == "development":
+            # 🔹 Local Whisper transcription
+            import tempfile
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+                temp_path = tmp.name
+                audio_file.save(temp_path)
 
-        # Transcribe with local Whisper
-        result = model.transcribe(temp_path)
+            result = whisper_model.transcribe(temp_path)
+            os.remove(temp_path)
 
-        # Clean up
-        os.remove(temp_path)
+            return jsonify({"text": result.get("text", "").strip()})
+        else:
+            # 🔹 Production → use Groq Whisper API
+            result = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio_file
+            )
+            return jsonify({"text": result.get("text", "").strip()})
 
-        return jsonify({"text": result["text"]})
     except Exception as e:
         app.logger.exception("Transcription error")
         return jsonify({"error": "Transcription failed"}), 500
-    
-    import tempfile
 
-from openai import OpenAI
-import tempfile, os
-from flask import request, jsonify
+
 
 @app.route("/trial_transcribe", methods=["POST"])
 def trial_transcribe():
