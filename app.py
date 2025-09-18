@@ -33,7 +33,7 @@ from libretranslatepy import LibreTranslateAPI
 import tempfile
 import whisper 
 from pydub import AudioSegment
-
+import imageio_ffmpeg
 # Path to your external .env file
 env_path = r"C:\Users\Professsor\Desktop\therapyapp.env\.env"
 
@@ -1225,22 +1225,21 @@ def transcribe():
             return jsonify({"error": "No audio uploaded"}), 400
 
         audio_file = request.files["audio"]
-        mimetype = (audio_file.mimetype or "").lower()
 
-        # Always normalize iPhone uploads into a supported format (m4a)
+        # Always normalize uploads into a supported format (m4a)
         with tempfile.NamedTemporaryFile(delete=False, suffix=".m4a") as tmp:
             temp_path = tmp.name
 
-            # If iOS sends CAF or something odd, re-encode to m4a
             try:
+                # Convert whatever iPhone/Android browser sends (caf, webm, etc.)
                 audio = AudioSegment.from_file(audio_file.stream)
                 audio.export(temp_path, format="m4a")
             except Exception:
-                # Fallback: just save as-is if already valid
+                # Fallback: if it's already supported, just save it
                 audio_file.save(temp_path)
 
         if os.getenv("FLASK_ENV") == "development":
-            # Local whisper
+            # Local Whisper
             result = whisper_model.transcribe(temp_path)
             text = result["text"]
         else:
@@ -1258,7 +1257,6 @@ def transcribe():
     except Exception as e:
         app.logger.exception("Transcription error")
         return jsonify({"error": str(e)}), 500
-
 
 
 @app.route("/trial_transcribe", methods=["POST"])
