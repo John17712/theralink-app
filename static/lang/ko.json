@@ -205,5 +205,9 @@
 
   "subscribe_title": "TheraLink 구독하기",
   "subscribe_text": "무제한 채팅 및 통화 세션을 저렴하게 이용하세요",
-  "subscribe_button": "지금 구독"
+  "subscribe_button": "지금 구독",
+
+"start_talking": "🎤 말하기 시작",
+"stop_talking": "🎤 말하기 중지"
+
 }

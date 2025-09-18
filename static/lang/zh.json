@@ -205,5 +205,9 @@
 
   "subscribe_title": "订阅 TheraLink",
   "subscribe_text": "解锁无限聊天和通话，仅需",
-  "subscribe_button": "立即订阅"
+  "subscribe_button": "立即订阅",
+
+  "start_talking": "🎤 开始说话",
+"stop_talking": "🎤 停止说话"
+
 }

@@ -626,3 +626,28 @@ select,
   margin-top: 60px;
 }
 
+/* ---------- Transcript tweaks for phones ---------- */
+@media (max-width: 600px) {
+  .transcript {
+    min-height: 50vh;          /* use half the viewport height */
+    max-height: none;          /* remove cap */
+    flex: 1;                   /* take available space */
+    padding: 16px 12px;        /* more comfortable padding */
+    font-size: 1rem;           /* slightly larger text for readability */
+    line-height: 1.5;
+    overflow-y: auto;
+    scroll-behavior: smooth;   /* smooth scrolling */
+  }
+
+  .transcript .msg {
+    margin-bottom: 14px;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 1rem;
+  }
+
+  .transcript-placeholder {
+    font-size: 1rem;
+    padding: 20px;
+  }
+}

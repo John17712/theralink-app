@@ -205,5 +205,9 @@
 
   "subscribe_title": "TheraLinkを購読",
   "subscribe_text": "無制限のチャットと通話セッションをわずかで解除",
-  "subscribe_button": "今すぐ購読"
+  "subscribe_button": "今すぐ購読",
+
+  "start_talking": "🎤 話し始める",
+"stop_talking": "🎤 話すのをやめる"
+
 }

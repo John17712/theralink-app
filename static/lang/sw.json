@@ -205,5 +205,9 @@
 
   "subscribe_title": "Jisajili TheraLink",
   "subscribe_text": "Fungua vipindi visivyo na kikomo vya soga na simu kwa bei ya",
-  "subscribe_button": "Jiunge Sasa"
+  "subscribe_button": "Jiunge Sasa",
+
+  "start_talking": "🎤 Anza Kuzungumza",
+"stop_talking": "🎤 Misa Kuzungumza"
+
 }

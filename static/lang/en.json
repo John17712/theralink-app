@@ -205,5 +205,9 @@
 
   "subscribe_title": "Subscribe to TheraLink",
   "subscribe_text": "Unlock unlimited chat & call sessions for only",
-  "subscribe_button": "Subscribe Now"
+  "subscribe_button": "Subscribe Now",
+
+  "start_talking": "🎤 Start Talking",
+  "stop_talking": "🎤 Stop Talking"
+
 }

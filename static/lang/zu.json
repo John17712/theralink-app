@@ -205,5 +205,9 @@
 
   "subscribe_title": "Bhalisa ku-TheraLink",
   "subscribe_text": "Vula izikhathi ezingapheli zengxoxo nocingo ngentengo engu",
-  "subscribe_button": "Bhalisa Manje"
+  "subscribe_button": "Bhalisa Manje",
+
+  "start_talking": "🎤 Qala Ukukhuluma",
+"stop_talking": "🎤 Misa Ukukhuluma"
+
 }

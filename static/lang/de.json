@@ -205,5 +205,9 @@
 
   "subscribe_title": "Abonniere TheraLink",
   "subscribe_text": "Schalte unbegrenzte Chat- & Anruf-Sitzungen frei für nur",
-  "subscribe_button": "Jetzt abonnieren"
+  "subscribe_button": "Jetzt abonnieren",
+
+  "start_talking": "🎤 Sprechen beginnen",
+"stop_talking": "🎤 Sprechen beenden"
+
 }

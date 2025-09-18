@@ -205,5 +205,9 @@
 
   "subscribe_title": "Suscríbete a TheraLink",
   "subscribe_text": "Desbloquea sesiones ilimitadas de chat y llamadas por solo",
-  "subscribe_button": "Suscríbete ahora"
+  "subscribe_button": "Suscríbete ahora",
+
+  "start_talking": "🎤 Comenzar a hablar",
+"stop_talking": "🎤 Dejar de hablar"
+
 }
