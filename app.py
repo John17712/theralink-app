@@ -34,7 +34,7 @@ import whisper
 
 
 # ✅ Load model once when the server starts
-model = whisper.load_model("base")  # can also use "tiny", "small", "medium", "large"
+model = whisper.load_model("tiny")  # can also use "tiny", "small", "medium", "large"
 
 # ========================================================================
 # CONFIG
