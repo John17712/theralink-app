@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-set -o errexit
+set -o errexit  # stop on first error
 
-# Install ffmpeg for pydub
-apt-get update
-apt-get install -y ffmpeg
+echo "🚀 Starting Render build..."
 
 # Install Python dependencies
+pip install --upgrade pip
 pip install -r requirements.txt
+
+echo "✅ Build complete!"
