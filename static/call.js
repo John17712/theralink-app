@@ -777,28 +777,35 @@ async function startIOSLiveTranscription() {
     liveTextBuffer = "";
 
     liveRecorder.ondataavailable = async (e) => {
-      console.log("🎤 iOS chunk size:", e.data.size); // DEBUG
-      if (e.data.size < 1000) return; // skip tiny noise
+  console.log("🎤 iOS chunk size:", e.data.size);
 
-      const formData = new FormData();
-      formData.append("audio", e.data, "chunk.mp4");
+  // ✅ Only skip if truly empty
+  if (e.data.size === 0) {
+    console.warn("⚠️ Empty chunk skipped");
+    return;
+  }
 
-      try {
-        const res = await fetch("/transcribe", { method: "POST", body: formData });
-        const data = await res.json();
-        console.log("📜 iOS partial transcript:", data);
+  const formData = new FormData();
+  formData.append("audio", e.data, "chunk.mp4");
 
-        if (data.text && data.text.trim() !== "") {
-          // Update bubble text live
-          liveTextBuffer += " " + data.text;
-          liveTranscriptDiv.querySelector(".live-text").innerText = liveTextBuffer.trim();
-          transcriptBox.scrollTop = transcriptBox.scrollHeight;
-          resetSilenceTimer();
-        }
-      } catch (err) {
-        console.warn("⚠️ iOS chunk transcription failed:", err);
-      }
-    };
+  try {
+    const res = await fetch("/transcribe", { method: "POST", body: formData });
+    const data = await res.json();
+    console.log("📜 iOS partial transcript:", data);
+
+    if (data.text && data.text.trim() !== "") {
+      liveTextBuffer += " " + data.text;
+      liveTranscriptDiv.querySelector(".live-text").innerText = liveTextBuffer.trim();
+      transcriptBox.scrollTop = transcriptBox.scrollHeight;
+      resetSilenceTimer();
+    } else {
+      console.warn("⚠️ iOS chunk had no text");
+    }
+  } catch (err) {
+    console.warn("⚠️ iOS chunk transcription failed:", err);
+  }
+};
+
 
     liveRecorder.start(); // no interval
     // Force flush every 800ms manually

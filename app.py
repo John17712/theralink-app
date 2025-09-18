@@ -1226,30 +1226,49 @@ def transcribe():
 
         audio_file = request.files["audio"]
 
-        # Always normalize uploads into a supported format (m4a)
+        # 🔹 Reject empty uploads early
+        if not audio_file or audio_file.content_length == 0:
+            return jsonify({"error": "Empty audio file"}), 400
+
         with tempfile.NamedTemporaryFile(delete=False, suffix=".m4a") as tmp:
             temp_path = tmp.name
-
             try:
-                # Convert whatever iPhone/Android browser sends (caf, webm, etc.)
-                audio = AudioSegment.from_file(audio_file.stream)
+                # ✅ Explicitly tell pydub to guess format from mimetype
+                mime_type = audio_file.mimetype
+                app.logger.info(f"Received audio upload: {mime_type}, size={audio_file.content_length}")
+
+                # iOS Safari often sends audio/mp4 or audio/x-caf
+                if mime_type in ("audio/mp4", "audio/m4a", "audio/x-m4a", "audio/x-caf"):
+                    audio = AudioSegment.from_file(audio_file.stream, format="mp4")
+                elif "webm" in mime_type:
+                    audio = AudioSegment.from_file(audio_file.stream, format="webm")
+                else:
+                    # Let pydub try to auto-detect
+                    audio = AudioSegment.from_file(audio_file.stream)
+
                 audio.export(temp_path, format="m4a")
-            except Exception:
-                # Fallback: if it's already supported, just save it
+
+            except Exception as conv_err:
+                app.logger.warning(f"Audio conversion failed: {conv_err}, saving raw file")
+                audio_file.seek(0)
                 audio_file.save(temp_path)
 
+        # 🔹 Double-check size before calling API
+        if os.path.getsize(temp_path) == 0:
+            os.remove(temp_path)
+            return jsonify({"error": "Processed audio file is empty"}), 400
+
+        # 🔹 Run transcription
         if os.getenv("FLASK_ENV") == "development":
-            # Local Whisper
             result = whisper_model.transcribe(temp_path)
-            text = result["text"]
+            text = result.get("text", "").strip()
         else:
-            # Production → Groq Whisper API
             with open(temp_path, "rb") as f:
                 transcript = client.audio.transcriptions.create(
-                    model="whisper-1",
+                    model="whisper-large-v3",   # ✅ Correct Groq model name
                     file=f
                 )
-            text = transcript.text
+            text = transcript.text.strip()
 
         os.remove(temp_path)
         return jsonify({"text": text})

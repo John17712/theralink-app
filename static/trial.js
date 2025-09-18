@@ -896,6 +896,7 @@ let liveTranscriptDiv;
 let liveTextBuffer = "";
 
 // ✅ Start live transcription on iOS
+// ✅ Start live transcription on iOS
 async function startIOSLiveTranscription() {
   try {
     liveStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -916,7 +917,12 @@ async function startIOSLiveTranscription() {
 
     liveRecorder.ondataavailable = async (e) => {
       console.log("🎤 iOS chunk size:", e.data.size); // DEBUG
-      if (e.data.size < 1000) return; // skip tiny noise
+
+      // ✅ Only skip if truly empty
+      if (e.data.size === 0) {
+        console.warn("⚠️ Empty iOS chunk skipped");
+        return;
+      }
 
       const formData = new FormData();
       formData.append("audio", e.data, "chunk.mp4");
@@ -932,13 +938,16 @@ async function startIOSLiveTranscription() {
           liveTranscriptDiv.querySelector(".live-text").innerText = liveTextBuffer.trim();
           transcriptBox.scrollTop = transcriptBox.scrollHeight;
           resetSilenceTimer();
+        } else {
+          console.warn("⚠️ iOS chunk had no text");
         }
       } catch (err) {
         console.warn("⚠️ iOS chunk transcription failed:", err);
       }
     };
 
-    liveRecorder.start(); // no interval
+    liveRecorder.start();
+
     // Force flush every 800ms manually
     liveTranscribeTimer = setInterval(() => {
       if (liveRecorder && liveRecorder.state === "recording") {
@@ -955,6 +964,7 @@ async function startIOSLiveTranscription() {
     callStatus.innerText = "⚠️ iOS microphone error.";
   }
 }
+
 
 // ✅ Stop transcription and finalize
 function stopIOSLiveTranscription() {
