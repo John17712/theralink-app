@@ -1226,7 +1226,7 @@ def transcribe():
     
     import tempfile
 
-from openai import OpenAI
+
 import tempfile, os
 from flask import request, jsonify
 
