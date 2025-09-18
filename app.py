@@ -33,13 +33,21 @@ import tempfile
 import whisper 
 
 
+# Path to your external .env file
+env_path = r"C:\Users\Professsor\Desktop\therapyapp.env\.env"
+
+# Load it
+load_dotenv(env_path)
+
+
+
 # ✅ Load model once when the server starts
 model = whisper.load_model("tiny")  # can also use "tiny", "small", "medium", "large"
 
 # ========================================================================
 # CONFIG
 # ========================================================================
-load_dotenv()
+#load_dotenv()
 
 # ========================================================================
 # OPENAI CLIENT (GROQ)
@@ -150,12 +158,16 @@ used_reset_tokens = set()
 
 
 # Configure Flask-Mail
-app.config['MAIL_SERVER'] = 'smtp.hostinger.com'
-app.config['MAIL_PORT'] = 465
-app.config['MAIL_USE_SSL'] = True
-app.config['MAIL_USERNAME'] = 'support@theralinkapp.com'  # your new domain email
-app.config['MAIL_PASSWORD'] = 'John4236.'       # password you set in Hostinger
-app.config['MAIL_DEFAULT_SENDER'] = ('TheraLink Support', 'support@theralinkapp.com')
+app.config['MAIL_SERVER'] = os.getenv("MAIL_SERVER", "smtp.hostinger.com")
+app.config['MAIL_PORT'] = int(os.getenv("MAIL_PORT", 465))
+app.config['MAIL_USE_SSL'] = os.getenv("MAIL_USE_SSL", "true").lower() == "true"
+app.config['MAIL_USE_TLS'] = os.getenv("MAIL_USE_TLS", "false").lower() == "true"
+app.config['MAIL_USERNAME'] = os.getenv("MAIL_USERNAME")
+app.config['MAIL_PASSWORD'] = os.getenv("MAIL_PASSWORD")  # ✅ no hardcoded password
+app.config['MAIL_DEFAULT_SENDER'] = (
+    "TheraLink Support",
+    os.getenv("MAIL_DEFAULT_SENDER", "support@theralinkapp.com")
+)
 
 # Initialize Flask-Mail
 mail = Mail(app)
@@ -1669,23 +1681,22 @@ def admin_page():
 @app.route("/create_admin")
 def create_admin():
     from werkzeug.security import generate_password_hash
-
-    # Check if admin exists
-    existing = User.query.filter_by(email="support@theralinkapp.com").first()
+    existing = User.query.filter_by(email=os.getenv("ADMIN_EMAIL")).first()
     if existing:
         return "Admin user already exists!"
 
-    # Create new admin
+    admin_password = os.getenv("ADMIN_PASSWORD")
     admin = User(
-        email="support@theralinkapp.com",
-        password_hash=generate_password_hash("YourSecurePassword123!"),
+        email=os.getenv("ADMIN_EMAIL"),
+        password_hash=generate_password_hash(admin_password),
         is_subscribed=True,
         subscription_type="free"
     )
     db.session.add(admin)
     db.session.commit()
+    return f"✅ Admin user created: {os.getenv('ADMIN_EMAIL')}"
 
-    return "✅ Admin user created: support@theralinkapp.com"
+
 
 
 @app.route("/admin_login", methods=["GET", "POST"])
@@ -1695,7 +1706,7 @@ def admin_login():
         password = request.form.get("password") or ""
 
         user = User.query.filter_by(email=email).first()
-        if user and user.check_password(password) and user.email == "support@theralinkapp.com":
+        if user and user.check_password(password) and user.email == os.getenv("ADMIN_EMAIL"):
             login_user(user)
             flash("Welcome, Admin!", "success")
             return redirect(url_for("admin_page"))  # goes to your admin.html
@@ -1704,6 +1715,7 @@ def admin_login():
             return redirect(url_for("admin_login"))
 
     return render_template("admin_login.html")
+
 
 # ======================
 # SET PASSWORD
