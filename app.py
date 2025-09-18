@@ -32,6 +32,7 @@ from flask_mail import Message
 from libretranslatepy import LibreTranslateAPI
 import tempfile
 import whisper 
+from pydub import AudioSegment
 
 # Path to your external .env file
 env_path = r"C:\Users\Professsor\Desktop\therapyapp.env\.env"
@@ -1224,29 +1225,39 @@ def transcribe():
             return jsonify({"error": "No audio uploaded"}), 400
 
         audio_file = request.files["audio"]
+        mimetype = (audio_file.mimetype or "").lower()
 
-        if FLASK_ENV == "development":
-            # 🔹 Local Whisper transcription
-            import tempfile
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
-                temp_path = tmp.name
+        # Always normalize iPhone uploads into a supported format (m4a)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".m4a") as tmp:
+            temp_path = tmp.name
+
+            # If iOS sends CAF or something odd, re-encode to m4a
+            try:
+                audio = AudioSegment.from_file(audio_file.stream)
+                audio.export(temp_path, format="m4a")
+            except Exception:
+                # Fallback: just save as-is if already valid
                 audio_file.save(temp_path)
 
+        if os.getenv("FLASK_ENV") == "development":
+            # Local whisper
             result = whisper_model.transcribe(temp_path)
-            os.remove(temp_path)
-
-            return jsonify({"text": result.get("text", "").strip()})
+            text = result["text"]
         else:
-            # 🔹 Production → use Groq Whisper API
-            transcript = client.audio.transcriptions.create(
-                model="whisper-1",
-                file=audio_file.stream  # Flask stream → avoids temp save
-            )
-            return jsonify({"text": (transcript.text or "").strip()})
+            # Production → Groq Whisper API
+            with open(temp_path, "rb") as f:
+                transcript = client.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=f
+                )
+            text = transcript.text
+
+        os.remove(temp_path)
+        return jsonify({"text": text})
 
     except Exception as e:
         app.logger.exception("Transcription error")
-        return jsonify({"error": f"Transcription failed: {str(e)}"}), 500
+        return jsonify({"error": str(e)}), 500
 
 
 
