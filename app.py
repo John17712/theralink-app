@@ -42,7 +42,7 @@ load_dotenv(env_path)
 
 
 # ✅ Load model once when the server starts
-model = whisper.load_model("tiny")  # can also use "tiny", "small", "medium", "large"
+model = whisper.load_model("base")  # can also use "tiny", "small", "medium", "large"
 
 # ========================================================================
 # CONFIG
@@ -1226,7 +1226,7 @@ def transcribe():
     
     import tempfile
 
-
+from openai import OpenAI
 import tempfile, os
 from flask import request, jsonify
 
