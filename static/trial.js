@@ -1,3 +1,16 @@
+// ================= TRIAL LIMIT SETTINGS =================
+const TRIAL_MAX_SESSIONS = 5;
+const TRIAL_SESSION_LIMIT_MS = 5 * 60 * 1000; // 5 minutes per call
+
+let trialSessionsUsed = parseInt(localStorage.getItem("trialSessionsUsed") || "0");
+let trialActiveStart = null;
+let timerInterval = null;
+
+const timeLeftEl = document.getElementById("timeLeft");
+const sessionsLeftEl = document.getElementById("sessionsLeft");
+const trialLimitBanner = document.getElementById("trialLimitBanner");
+
+
 let callSessions = JSON.parse(localStorage.getItem("callSessions")) || {};
 let currentCallSessionId = localStorage.getItem("currentCallSessionId") || null;
 
@@ -34,6 +47,57 @@ const preferredVoices = {
     male: ["Alex", "David", "Daniel", "Google US English"]
   }
 };
+
+
+// Time limit
+
+function updateTimerDisplay() {
+  if (!trialActiveStart) return;
+  const elapsed = Date.now() - trialActiveStart;
+  let remaining = TRIAL_SESSION_LIMIT_MS - elapsed;
+  if (remaining < 0) remaining = 0;
+
+  const mins = Math.floor(remaining / 60000);
+  const secs = Math.floor((remaining % 60000) / 1000);
+
+  if (timeLeftEl) {
+    timeLeftEl.textContent = `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  }
+
+  if (remaining === 0) {
+    clearInterval(timerInterval);
+    endCall();
+    showTrialLimitBanner();
+    alert("⏰ Your trial call has ended. Please sign up to continue.");
+    window.location.href = "/signup";
+  }
+}
+
+function updateSessionsLeft() {
+  const remaining = Math.max(0, TRIAL_MAX_SESSIONS - trialSessionsUsed);
+  if (sessionsLeftEl) sessionsLeftEl.textContent = remaining;
+
+  if (remaining === 0) {
+    showTrialLimitBanner();
+  }
+}
+
+
+function showTrialLimitBanner() {
+  if (trialLimitBanner) {
+    trialLimitBanner.style.display = "block";
+  }
+
+  if (newCallSessionBtn) newCallSessionBtn.disabled = true;
+  if (startCallBtn) startCallBtn.disabled = true;
+
+  // ⏳ Redirect after 3 seconds
+  setTimeout(() => {
+    window.location.href = "/signup";
+  }, 3000);
+}
+
+
 
 // ---------------- 🌍 Load UI Translations ----------------
 async function loadTranslations(lang) {
@@ -240,20 +304,33 @@ synth.speak(utter);
 
 
 // ---------------- 📞 Call flow ----------------
-function startCall() {
+async function startCall(autoSpeak = false) {
+  trialActiveStart = Date.now();
+  clearInterval(timerInterval);
+  timerInterval = setInterval(updateTimerDisplay, 1000);
+
   if (!currentCallSessionId || !callSessions[currentCallSessionId]) return;
+
   callStatus.innerText = translations["call_in_progress"] || "Call in progress...";
   startCallBtn.disabled = true;
   endCallBtn.disabled = false;
   continueBtn.style.display = "none";
 
   const session = callSessions[currentCallSessionId];
+
   if (session.messages.length === 0) {
-    sendToTherapist("__init__");
+    // ✅ Ensure voices are ready before greeting
+    await initVoices();
+
+    // ✅ Now force immediate therapist greeting
+    sendToTherapist("__init__", autoSpeak);
   } else {
     startListening();
   }
 }
+
+
+
 
 function endCall() {
   callStatus.innerText = translations["call_ended"] || "Call ended.";
@@ -261,9 +338,10 @@ function endCall() {
   endCallBtn.disabled = true;
   stopListening();
   window.speechSynthesis.cancel();
+  clearInterval(timerInterval);
 }
 
-function sendToTherapist(message) {
+function sendToTherapist(message, autoSpeak = false) {
   if (!message) return;
   const session = callSessions[currentCallSessionId];
 
@@ -291,7 +369,38 @@ function sendToTherapist(message) {
         session.messages.push({ sender: "therapist", text: data.reply });
         renderTranscript(session);
         continueBtn.style.display = "none";
-        speakText(data.reply);
+
+        // ✅ Speak therapist reply
+        if (autoSpeak || message !== "__init__") {
+          const utter = new SpeechSynthesisUtterance(data.reply);
+          utter.lang = CALL_LANG_CODE;
+          utter.voice = selectedVoice;
+          utter.rate = 1;
+          utter.pitch = 1.0;
+
+          isTherapistSpeaking = true;
+          hideUserTurn();
+
+          utter.onend = () => {
+            console.log("✅ Therapist finished speaking");
+            isTherapistSpeaking = false;
+
+            // 🔔 Ding + show "Your turn"
+            playTurnSound();
+            showUserTurn();
+
+            // 🎙️ Auto-start mic/recognition depending on platform
+            if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+              onTherapistFinished(); // iOS → mic button/live recording
+            } else {
+              startListening(); // Desktop → webkitSpeechRecognition
+            }
+          };
+
+          speechSynthesis.cancel();
+          speechSynthesis.speak(utter);
+        }
+
         if (!titleGenerated && message !== "__init__") {
           autoRenameCallSession();
         }
@@ -304,6 +413,9 @@ function sendToTherapist(message) {
       callStatus.innerText = "Error: Unable to connect to call.";
     });
 }
+
+
+
 
 function autoRenameCallSession() {
   const session = callSessions[currentCallSessionId];
@@ -436,20 +548,46 @@ function stopListening() {
 
 
 // ---------------- Sessions ----------------
-function addNewCallSession() {
+async function addNewCallSession() {
+  if (trialSessionsUsed >= TRIAL_MAX_SESSIONS) {
+    showTrialLimitBanner();
+    return;
+  }
+
   const id = Date.now().toString();
+
   callSessions[id] = {
-    name: translations["new_call_session"] || "New Call Session",
+    name: translations["new_call_session"] || "New Call",
     messages: [],
-    kind: "call"   // 👈 make sure it’s marked as a call session
+    _titleGenerated: false,
+    kind: "trial_call"
   };
+
   currentCallSessionId = id;
-  persistCallToDB(id);
+  trialSessionsUsed++;
+  localStorage.setItem("trialSessionsUsed", trialSessionsUsed);
   titleGenerated = false;
+
+  saveCallState();
   renderCallSessions();
   loadCallSession(id);
-  startCall();
+  updateSessionsLeft();
+
+  // 🔓 Unlock voices/audio before starting first greeting
+  try {
+    const unlockUtter = new SpeechSynthesisUtterance(" ");
+    speechSynthesis.speak(unlockUtter);
+  } catch (e) {
+    console.warn("Audio unlock failed:", e);
+  }
+
+  await initVoices();
+
+  // ✅ Now safe to auto-start and speak greeting
+  startCall(true);
 }
+
+
 
 
 function renameCallSession(id) {

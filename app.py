@@ -9,6 +9,7 @@ from flask_migrate import Migrate
 import stripe
 from flask  import abort
 from flask_login import current_user
+from langdetect import detect
 
 from dotenv import load_dotenv
 from flask import (
@@ -27,13 +28,117 @@ from authlib.integrations.flask_client import OAuth
 from flask_mail import Mail
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from flask_mail import Message
+from libretranslatepy import LibreTranslateAPI
+import tempfile
+import whisper 
 
 
+# ✅ Load model once when the server starts
+model = whisper.load_model("base")  # can also use "tiny", "small", "medium", "large"
 
 # ========================================================================
 # CONFIG
 # ========================================================================
 load_dotenv()
+
+# ========================================================================
+# OPENAI CLIENT (GROQ)
+# ========================================================================
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+MODEL = "llama-3.3-70b-versatile"   # or "llama-3.1-70b-versatile" if you want stronger model
+user_sessions = {}
+
+lt = LibreTranslateAPI("https://translate.argosopentech.com/")  # free public server
+
+# translation Helper
+
+def translate_text(text, target_lang):
+    if not text.strip():
+        return text
+    try:
+        return lt.translate(text, target_lang)
+    except Exception as e:
+        print("Translation error:", e)
+        return text
+
+def therapist_reply(user_id, session_id, user_message, user_lang="en"):
+    print(f"[DEBUG] Detected language: {user_lang}")
+    print(f"[DEBUG] Original message: {user_message}")
+
+    if user_id not in user_sessions:
+        user_sessions[user_id] = {}
+    if session_id not in user_sessions[user_id]:
+        user_sessions[user_id][session_id] = []
+
+    # 1. Translate user message → English
+    user_message_en = user_message
+    if user_lang != "en":
+        user_message_en = translate_text(user_message, "en")
+
+    # Save user message
+    user_sessions[user_id][session_id].append({"role": "user", "content": user_message_en})
+
+    # 2. Build conversation
+    messages = [{"role": "system", "content": THERAPIST_PROMPT}] + user_sessions[user_id][session_id]
+
+    try:
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=messages,
+            temperature=0.75,
+            max_tokens=350
+        )
+        reply_en = response.choices[0].message.content.strip()
+    except Exception as e:
+        print("[ERROR] Chat API error:", e)
+        reply_en = "Sorry, something went wrong."
+
+    # 3. Safeguard: avoid repetition
+    prev_replies = [m["content"] for m in user_sessions[user_id][session_id] if m["role"] == "assistant"]
+    if prev_replies and reply_en in prev_replies[-2:]:
+        reply_en = "I hear you. What feels most important to share right now?"
+
+    # Save assistant reply
+    user_sessions[user_id][session_id].append({"role": "assistant", "content": reply_en})
+
+    # 4. Translate back if needed
+    if user_lang != "en":
+        return translate_text(reply_en, user_lang)
+
+    return reply_en
+
+
+THERAPIST_PROMPT = """
+You are a compassionate, emotionally intelligent therapist.
+
+Your default role:
+- Be therapeutic, empathetic, and reflective.
+- First briefly reflect what the user is feeling.
+- Then ask ONE thoughtful, open-ended question.
+- Never lecture, never ask multiple questions.
+- Keep replies short, warm, and natural (1–4 sentences).
+- Always respond in the user’s language unless told otherwise.
+- Match their tone: gentle if sad, steady if angry, calm if anxious, encouraging if hopeful.
+- Avoid repeating the same sentence structure back-to-back.
+
+But you are also adaptive:
+- If the user directly asks for **advice, tips, or guidance**, switch from reflection to giving clear, practical, supportive answers. 
+    - Provide short lists (2–5 tips max) if asked.
+    - Balance empathy with usefulness. 
+- If the user expresses emotions (e.g., “I feel depressed”, “I’m anxious”, “I’m angry”), focus fully on therapy:
+    - Reflect feelings, validate them, and ask gentle questions.
+- If the user asks a **general knowledge question** (not emotional), you may respond informatively like ChatGPT, but keep the tone supportive and conversational.
+- If the user seems lost or stuck, you may offer gentle moral encouragement or principles (e.g., resilience, patience, kindness).
+
+Always:
+- Keep responses natural, human, and adaptive.
+- Vary sentence structure (avoid sounding repetitive).
+- Stay short: usually 2–4 sentences, unless tips or advice are requested.
+"""
+
+# ==================================
+# Flask 
+# ==================================
 
 app = Flask(__name__)
 app.secret_key = os.getenv(
@@ -417,12 +522,7 @@ class UserSession(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# ========================================================================
-# OPENAI CLIENT (GROQ)
-# ========================================================================
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-MODEL = "llama-3.1-8b-instant"   # or "llama-3.1-70b-versatile" if you want stronger model
-user_sessions = {}
+
 # ========================================================================
 # TRIAL CONFIG
 # ========================================================================
@@ -644,7 +744,7 @@ def logout():
     logout_user()
     session.clear()
 
-    response = redirect(url_for("login"))
+    response = redirect(url_for("index"))
     response.headers["Clear-Site-Data"] = '"cache", "cookies", "storage", "executionContexts"'
     flash("✅ You have been logged out.", "info")
     return response
@@ -725,13 +825,13 @@ def trial_chat():
 
 @app.route("/trial_chat_message", methods=["POST"])
 def trial_chat_message():
+    # Track trial chat usage
     session["trial_chat_count"] = session.get("trial_chat_count", 0) + 1
     if session["trial_chat_count"] >= TRIAL_CHAT_LIMIT:
         return jsonify({"redirect": url_for("signup")})
 
     data = request.get_json()
     user_message = data.get("message", "")
-    lang = data.get("language", "en")
 
     # ==== Persist trial_chat session if logged in ====
     if current_user.is_authenticated:
@@ -753,27 +853,16 @@ def trial_chat_message():
         trial_session.messages.append({"role": "user", "content": user_message})
         db.session.commit()
 
-    # ==== System prompt depends on language + formatting instruction ====
-    if lang == "en":
-        system_prompt = (
-            "You are a supportive, emotionally intelligent companion. "
-            "Always reply naturally in English. "
-            "Do not translate, repeat, or switch languages unless the user does. "
-            "If your response includes multiple suggestions, steps, or tips, "
-            "format them clearly as a numbered or bulleted Markdown list."
-        )
-    else:
-        system_prompt = (
-            "You are a supportive, emotionally intelligent companion. "
-            f"Always respond ONLY in {lang}. "
-            "Do not include English translations. "
-            "Adapt your tone and style to match the user’s emotions. "
-            "If your response includes multiple suggestions, steps, or tips, "
-            "format them clearly as a numbered or bulleted Markdown list."
-        )
-
+    # ==== Always English-only therapist logic ====
     conversation = [
-        {"role": "system", "content": system_prompt},
+        {"role": "system", "content": """
+        You are a compassionate therapist.
+        - Mirror the USER’s tone and mood.
+        - First reflect their feelings, then ask ONE thoughtful, open-ended question.
+        - Never lecture or ask multiple questions at once.
+        - Keep replies short, empathetic, and natural.
+        - 🚨 Always reply in ENGLISH, even if the user writes in another language.
+        """},
         {"role": "user", "content": user_message}
     ]
 
@@ -869,56 +958,80 @@ def chat_page():
     lang = request.args.get('lang', 'en')
     return render_template("chat.html", lang=lang)
 
-@app.route("/chat", methods=["GET", "POST"])
+@app.route("/chat", methods=["POST"])
 def chat():
-    if request.method == "GET":
-        lang = request.args.get('lang', 'en')
-        return render_template("chat.html", lang=lang)
-
     data = request.get_json()
-    user_id = data["user_id"]
-    session_id = data["session_id"]
-    message = data["message"]
-    therapist_name = data.get("therapist", "Your Companion")
-    language = data.get("language", "en")
+    user_id = str(data.get("user_id", "full_user"))
+    session_id = str(data.get("session_id", "default"))
+    message = data.get("message", "")
+    user_lang = data.get("language", "en")
 
-    if user_id not in user_sessions:
-        user_sessions[user_id] = {}
-    if session_id not in user_sessions[user_id]:
-        user_sessions[user_id][session_id] = []
+    # ==== Persist session if logged in ====
+    if current_user.is_authenticated:
+        chat_session = UserSession.query.filter_by(
+            user_id=current_user.id,
+            session_id=session_id,
+            kind="chat"
+        ).first()
+        if not chat_session:
+            chat_session = UserSession(
+                user_id=current_user.id,
+                session_id=session_id,
+                name="Chat Session",
+                messages=[],
+                kind="chat"
+            )
+            db.session.add(chat_session)
 
-    conversation = user_sessions[user_id][session_id]
+        chat_session.messages.append({"role": "user", "content": message})
+        db.session.commit()
 
-    if message == "__init__":
-        return jsonify({"reply": "", "sessionName": "New Session"})
+    # ==== Adaptive Therapist Prompt ====
+    conversation = [
+        {
+            "role": "system",
+            "content": """
+You are a compassionate, emotionally intelligent therapist and guide.
 
-    conversation.append({"role": "user", "content": message})
+Your default role:
+- Be therapeutic, empathetic, and reflective.
+- Mirror the user’s tone and feelings.
+- Ask one thoughtful, open-ended question to deepen their self-reflection.
 
-    # ✅ Smarter system prompt with structured formatting
-    if language == "en":
-        system_prompt = (
-            f"You are {therapist_name}, a supportive and emotionally intelligent companion. "
-            "Always reply naturally in English. "
-            "Do not translate, repeat, or switch languages unless the user does. "
-            "If your response includes multiple suggestions, steps, or tips, "
-            "format them clearly as a numbered or bulleted Markdown list."
-        )
-    else:
-        system_prompt = (
-            f"You are {therapist_name}, a supportive and emotionally intelligent companion. "
-            f"Always respond ONLY in {language}. "
-            "Do not include English translations. "
-            "Adapt your tone and style to match the user’s emotions. "
-            "If your response includes multiple suggestions, steps, or tips, "
-            "format them clearly as a numbered or bulleted Markdown list."
-        )
+But you are also adaptive:
+- If the user directly asks for advice, tips, or guidance, switch from reflection to giving clear, practical, supportive answers.
+  * Provide short lists (2–5 tips max) if asked.
+  * Balance empathy with usefulness.
+- If the user expresses emotions (e.g., “I feel depressed”, “I’m anxious”, “I’m angry”), focus fully on therapy:
+  * Reflect feelings, validate them, and ask gentle questions.
+- If the user asks a general knowledge question (not emotional), you may respond informatively like ChatGPT, but keep the tone supportive and conversational.
+- If the user seems lost or stuck, you may offer gentle moral encouragement or principles (e.g., resilience, patience, kindness).
 
-    prompt = [{"role": "system", "content": system_prompt}] + conversation
+Always:
+- Keep responses natural, human, and adaptive.
+- Vary sentence structure to avoid repetition.
+- Stay short: usually 2–4 sentences, unless tips or advice are requested.
+- Always reply in the user’s language unless told otherwise.
+- Always return structured answers in Markdown format when giving tips or advice.
+- If the user explicitly asks for **tips, advice, or steps**, switch into **structured mode**:  
+    * Provide a **numbered list or bullet points**.  
+    * Keep each point short (1–2 sentences max).  
+    * End with a reflective or open-ended question that encourages the user to engage with the advice.  
+
+Examples of structured mode:
+1. First tip here (short, clear).  
+2. Second tip here.  
+3. Third tip here.  
+Which of these feels most relevant to you right now?
+"""
+        },
+        {"role": "user", "content": message}
+    ]
 
     try:
         response = client.chat.completions.create(
             model=MODEL,
-            messages=prompt,
+            messages=conversation,
             temperature=0.8,
             max_tokens=400
         )
@@ -927,7 +1040,6 @@ def chat():
         app.logger.exception("Chat API error")
         reply = "Sorry, something went wrong."
 
-    conversation.append({"role": "assistant", "content": reply})
     return jsonify({"reply": reply})
 
 # ========================================================================
@@ -958,18 +1070,43 @@ def call():
         if session_id not in user_sessions[user_id]:
             user_sessions[user_id][session_id] = []
 
-        if user_message != "__init__":  # ignore init
-            user_sessions[user_id][session_id].append({"role": "user", "content": user_message})
+        # ✅ Handle call initialization
+        if user_message == "__init__":
+            # If no history yet → normal first greeting
+            if not user_sessions[user_id][session_id]:
+                welcome_msg = (
+                    "Hi, I’m glad we’re starting this call. "
+                    "What’s on your mind today?"
+                )
+            else:
+                # Continue conversation with memory
+                last_user_msg = None
+                for msg in reversed(user_sessions[user_id][session_id]):
+                    if msg["role"] == "user":
+                        last_user_msg = msg["content"]
+                        break
 
-        # ✅ Smarter system prompt with formatting instructions
-        system_prompt = (
-            "You are a compassionate, emotionally intelligent therapist. "
-            "Always reply in fluent English, naturally and empathetically. "
-            "Keep responses short but meaningful. "
-            "If you provide multiple suggestions, steps, or tips, "
-            "format them clearly as a numbered or bulleted Markdown list "
-            "so they can be read aloud and displayed neatly."
-        )
+                if last_user_msg:
+                    welcome_msg = (
+                        f"Welcome back. Last time you mentioned '{last_user_msg}'. "
+                        "Do you want to continue from there, or talk about something new today?"
+                    )
+                else:
+                    welcome_msg = "Welcome back. Do you want to continue where we left off, or start fresh today?"
+
+            return jsonify({"reply": welcome_msg, "session_id": session_id})
+
+        # ✅ Normal conversation flow
+        user_sessions[user_id][session_id].append({"role": "user", "content": user_message})
+
+        system_prompt = """
+        You are a compassionate, emotionally intelligent therapist.
+        - Always reply in fluent English.
+        - Keep your tone warm, empathetic, and conversational.
+        - Keep responses short and meaningful (1–3 sentences).
+        - Avoid bullet points, numbered lists, or structured formatting.
+        - End with ONE thoughtful, open-ended question when possible.
+        """
 
         conversation = [{"role": "system", "content": system_prompt}] + user_sessions[user_id][session_id]
 
@@ -977,7 +1114,7 @@ def call():
             model=MODEL,
             messages=conversation,
             temperature=0.8,
-            max_tokens=500
+            max_tokens=400
         )
 
         therapist_reply = response.choices[0].message.content.strip()
@@ -1049,6 +1186,145 @@ def rename_call_session():
     except Exception:
         app.logger.exception("Call rename error")
         return jsonify({"name": "Unnamed Session"})
+    
+
+    # =================Trasribe Feature Route================================
+@app.route("/transcribe", methods=["POST"])
+def transcribe():
+    try:
+        if "audio" not in request.files:
+            return jsonify({"error": "No audio uploaded"}), 400
+
+        audio_file = request.files["audio"]
+
+        # Save file temporarily
+        temp_path = os.path.join("temp_audio.mp4")
+        audio_file.save(temp_path)
+
+        # Transcribe with local Whisper
+        result = model.transcribe(temp_path)
+
+        # Clean up
+        os.remove(temp_path)
+
+        return jsonify({"text": result["text"]})
+    except Exception as e:
+        app.logger.exception("Transcription error")
+        return jsonify({"error": "Transcription failed"}), 500
+    
+    import tempfile
+
+from openai import OpenAI
+import tempfile, os
+from flask import request, jsonify
+
+@app.route("/trial_transcribe", methods=["POST"])
+def trial_transcribe():
+    try:
+        if "audio" not in request.files:
+            return jsonify({"error": "No audio uploaded"}), 400
+
+        audio_file = request.files["audio"]
+        mimetype = (audio_file.mimetype or "").lower()
+        size = getattr(audio_file, "content_length", None) or 0
+        app.logger.info(f"📡 Upload: mimetype={mimetype}, size={size}")
+
+        if size == 0:
+            return jsonify({"text": ""})
+
+        # 🔹 Pick extension based on mimetype
+        ext = ".webm"
+        if "mp4" in mimetype or "m4a" in mimetype:
+            ext = ".mp4"
+        elif "aac" in mimetype:
+            ext = ".aac"
+        elif "wav" in mimetype:
+            ext = ".wav"
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
+            temp_path = tmp.name
+            audio_file.save(temp_path)
+
+        file_size = os.path.getsize(temp_path)
+        if file_size < 2000:  # ~2KB safeguard
+            app.logger.warning(f"⚠️ File too small ({file_size} bytes), skipping transcription")
+            os.remove(temp_path)
+            return jsonify({"text": ""})
+
+        app.logger.info(f"🎙️ Transcribing file: {temp_path}, size={file_size} bytes")
+
+        # 🔹 Send to Whisper
+        with open(temp_path, "rb") as f:
+            transcript = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=f
+            )
+        transcription = (transcript.text or "").strip()
+
+        app.logger.info(f"✅ Transcription result: '{transcription}'")
+
+        # Clean up
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+        return jsonify({"text": transcription})
+
+    except Exception as e:
+        app.logger.exception(f"Trial transcription error: {str(e)}")
+        return jsonify({"error": "Transcription failed"}), 500
+
+@app.route("/debug_transcribe", methods=["POST"])
+def debug_transcribe():
+    """Simple endpoint to test if transcription works"""
+    try:
+        if "audio" not in request.files:
+            return jsonify({"error": "No audio file"}), 400
+
+        audio_file = request.files["audio"]
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+            audio_file.save(tmp.name)
+
+            with open(tmp.name, "rb") as f:
+                transcript = client.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=f
+                )
+            transcription = (transcript.text or "").strip()
+
+            os.remove(tmp.name)
+
+            return jsonify({
+                "success": True,
+                "text": transcription,
+                "length": len(transcription)
+            })
+
+    except Exception as e:
+        app.logger.exception("Debug transcription error")
+        return jsonify({"error": str(e)}), 500
+
+# ======Upload_audio======
+@app.route("/call/upload_audio", methods=["POST"])
+def upload_audio():
+    try:
+        audio_file = request.files["audio"]
+        session_id = request.form.get("session_id")
+
+        # Save temporary
+        path = os.path.join("uploads", audio_file.filename)
+        audio_file.save(path)
+
+        # Transcribe with Whisper (or any STT model)
+        transcript = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=open(path, "rb")
+        )
+
+        return jsonify({"text": transcript.text})
+    except Exception as e:
+        app.logger.exception("Audio upload error")
+        return jsonify({"error": str(e)}), 500
 
 # ========================================================================
 # SESSIONS (INCL. TRIAL) + SAVE/DELETE
@@ -1097,17 +1373,20 @@ def save_session():
         session_id = data.get("session_id")
         name = data.get("name")
         messages = data.get("messages", [])
-        kind = data.get("kind", "chat")
+        kind = data.get("kind")
 
-        if not session_id:
-            return jsonify({"success": False, "message": "Missing session_id"}), 400
+        if not session_id or not kind:
+            return jsonify({"success": False, "message": "Missing session_id or kind"}), 400
 
+        # 🔹 Look up session by user_id + session_id + kind
         s = UserSession.query.filter_by(
             user_id=current_user.id,
             session_id=session_id,
             kind=kind
         ).first()
+
         if not s:
+            # Create new session
             s = UserSession(
                 user_id=current_user.id,
                 session_id=session_id,
@@ -1118,7 +1397,7 @@ def save_session():
 
         if name:
             s.name = name
-        if messages:
+        if messages is not None:
             s.messages = messages
 
         db.session.commit()
@@ -1127,25 +1406,51 @@ def save_session():
         app.logger.exception("Error saving session")
         return jsonify({"success": False, "message": "Could not save session"}), 500
 
+@app.route("/sessions/chat", methods=["GET"])
+@login_required
+def get_chat_sessions():
+    sessions = UserSession.query.filter_by(
+        user_id=current_user.id, kind="chat"
+    ).all()
+    return jsonify({"success": True, "sessions": [
+        {"session_id": s.session_id, "name": s.name, "messages": s.messages, "kind": s.kind}
+        for s in sessions
+    ]})
+
+@app.route("/sessions/call", methods=["GET"])
+@login_required
+def get_call_sessions():
+    sessions = UserSession.query.filter_by(
+        user_id=current_user.id, kind="call"
+    ).all()
+    return jsonify({"success": True, "sessions": [
+        {"session_id": s.session_id, "name": s.name, "messages": s.messages, "kind": s.kind}
+        for s in sessions
+    ]})
+
 # ==== NEWLY ADDED: Delete Session ====
 @app.route("/sessions/delete", methods=["POST"])
 @login_required
 def delete_session():
-    if not current_user.is_authenticated:
-        return redirect(url_for("login"))
     try:
         data = request.get_json()
         session_id = data.get("session_id")
+
         if not session_id:
             return jsonify({"success": False, "message": "Missing session_id"}), 400
 
-        UserSession.query.filter_by(user_id=current_user.id, session_id=session_id).delete()
+        rows_deleted = UserSession.query.filter_by(
+            user_id=current_user.id, session_id=session_id
+        ).delete()
         db.session.commit()
-        return jsonify({"success": True})
-    except Exception:
+
+        if rows_deleted == 0:
+            return jsonify({"success": False, "message": "Session not found"}), 404
+
+        return jsonify({"success": True, "message": "Session deleted"})
+    except Exception as e:
         app.logger.exception("Error deleting session")
         return jsonify({"success": False, "message": "Could not delete session"}), 500
-
 
 
 #======================================================
@@ -1518,4 +1823,4 @@ def delete_user(user_id):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)

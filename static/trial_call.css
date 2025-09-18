@@ -1,0 +1,591 @@
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: linear-gradient(135deg, #0f2b23, #112831);
+  color: #fff;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+body {
+  overflow: hidden; /* prevent whole page scrolling */
+}
+/* ---------- Navbar ---------- */
+.navbar {
+  background-color: rgba(15, 43, 35, 0.95);
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(0,255,159,0.2);
+  position: relative;
+  z-index: 1000;
+}
+.nav-left, .nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.nav-item {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+}
+.nav-item:hover, .nav-item.active { color: #00ff9f; }
+.language-selector {
+  background: #1e4136; color: #fff;
+  border: none; padding: 6px 10px; border-radius: 6px;
+}
+.navbar-disclaimer { color: #ffb3b3; font-weight: 600; font-style: italic; }
+
+/* Menu button */
+.menu-btn {
+  background: none; border: none;
+  color: #00ff9f; font-size: 1.6rem;
+  cursor: pointer; margin-right: 12px;
+  padding: 4px 8px; border-radius: 6px;
+}
+.menu-btn:hover { background: rgba(0,255,159,0.1); }
+
+/* Dropdown links */
+.nav-links {
+  display: flex; flex-direction: column;
+  position: absolute; top: 60px; left: 20px;
+  background: rgba(20,40,35,0.95);
+  padding: 12px 20px; border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  max-height: 0; opacity: 0; overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+}
+.nav-links.show { max-height: 300px; opacity: 1; }
+.nav-links a {
+  margin: 6px 0; color: #fff; text-decoration: none; font-weight: 600;
+}
+.nav-links a:hover, .nav-links a.active { color: #00ff9f; }
+
+/* ---------- Trial Banner ---------- */
+.trial-banner {
+  display: flex; gap: 12px; padding: 10px 20px;
+  align-items: center; justify-content: center;
+  border-bottom: 1px solid rgba(0,255,159,0.15);
+  background: rgba(20, 40, 35, 0.6);
+}
+.pill {
+  background: #ffc107; color: #111; font-weight: 700;
+  padding: 8px 12px; border-radius: 999px;
+}
+.pill.dark { background: #00ff9f; color: #0f2b23; }
+
+/* ---------- Layout ---------- */
+.wrapper {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 44px;
+  height: calc(100vh - 98px);
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+/* Sidebar */
+.sidebar {
+  background: rgba(20, 40, 35, 0.9);
+  border: 1px solid rgba(0,255,159,0.1);
+  border-radius: 12px;
+  box-shadow: 0 0 30px rgba(0, 255, 140, 0.1);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.sidebar h2 { margin: 0 0 8px; color: #00ff9f; font-size: 1.1rem; }
+.session-list {
+  list-style: none; padding: 0; margin: 0;
+  overflow-y: auto; flex: 1;
+}
+.session-list li {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  gap: 8px; padding: 8px 10px;
+  border-radius: 8px; cursor: pointer;
+}
+.session-list li:hover { background: rgba(0,255,159,0.08); }
+.session-list li.active { background: rgba(0,255,159,0.14); }
+.session-title { font-weight: 600; color: #fff; }
+
+.new-session-btn {
+  margin-top: 10px;
+  background: #00ff9f; color: #0f2b23;
+  font-weight: 700; border: 0; border-radius: 10px;
+  padding: 10px 12px; cursor: pointer;
+}
+.new-session-btn:hover { background: #00d88c; }
+.new-session-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Main panel */
+.main {
+  background: rgba(20, 40, 35, 0.9);
+  border: 1px solid rgba(0,255,159,0.1);
+  border-radius: 12px;
+  box-shadow: 0 0 30px rgba(0, 255, 140, 0.1);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.header {
+  display: flex; justify-content: space-between;
+  align-items: center; margin-bottom: 10px;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.controls select {
+  background: #1e4136; color: #fff; border: none;
+  border-radius: 8px; padding: 6px 10px;
+}
+
+/* Ensure buttons have consistent sizing */
+.controls button {
+  min-width: 100px;
+  height: 32px;
+  white-space: nowrap;
+}
+
+.controls button:disabled { opacity: 0.5; cursor: not-allowed; }
+.controls button:hover:not(:disabled) { background: #00d88c; }
+
+.status { margin-bottom: 8px; color: #e6ffe6; }
+
+/* Transcript */
+.transcript {
+  background: #0f2b23;
+  border: 1px solid rgba(0,255,159,0.1);
+  border-radius: 10px;
+  padding: 12px;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 60vh; /* keep it inside screen */
+  -webkit-overflow-scrolling: touch; /* smooth iOS scroll */
+}
+.transcript-placeholder { margin: 0; color: #bfead8; }
+
+/* Message bubbles */
+.transcript .msg {
+  max-width: 75%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  line-height: 1.45;
+  font-size: 0.95rem;
+}
+.transcript .msg.user {
+  align-self: flex-end;
+  background: #e0f7e9;
+  color: #222;
+}
+.transcript .msg.therapist {
+  align-self: flex-start;
+  background: #fff8dc;
+  color: #222;
+}
+
+.continue-button {
+  margin-top: 10px; align-self: flex-start;
+  background: #00ff9f; color: #0f2b23;
+  border: none; border-radius: 8px;
+  padding: 8px 12px; font-weight: 700; cursor: pointer;
+}
+.continue-button:hover { background: #00d88c; }
+
+/* Brand */
+.brand { font-size: 1.3rem; font-weight: 700; color: #00ff9f;
+  margin-right: 20px; letter-spacing: 1px; }
+.logo-img { height: 32px; margin-right: 8px; vertical-align: middle; }
+.brand-link { display: flex; align-items: center; text-decoration: none; margin-right: 20px; }
+.brand-name { font-size: 1.2rem; font-weight: 700; color: #00ff9f; }
+.brand-link:hover .brand-name { color: #00d88c; }
+
+/* Trial limit banner */
+.limit-banner {
+  background: rgba(255,77,77,0.15);
+  color: #ffd6d6;
+  font-weight: 700;
+  padding: 10px;
+  text-align: center;
+  border-radius: 8px;
+  margin: 6px 16px 0;
+}
+.limit-banner a {
+  color: #00ff9f;
+  text-decoration: underline;
+  margin-left: 8px;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 992px) {
+  .wrapper {
+    grid-template-columns: 220px 1fr;
+    gap: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  body { overflow: auto; }
+  .wrapper {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    height: auto;
+  }
+  .sidebar { order: 2; }
+  .main { order: 1; min-height: 400px; }
+  .controls { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .trial-banner { flex-direction: column; gap: 8px; }
+}
+
+@media (max-width: 480px) {
+  .navbar { flex-direction: column; align-items: flex-start; padding: 10px; }
+  .nav-right { flex-wrap: wrap; gap: 8px; }
+  .wrapper { padding: 10px; }
+  .main { padding: 10px; }
+  .sidebar { padding: 10px; }
+  .transcript .msg { font-size: 0.85rem; }
+  h1 { font-size: 1.2rem; }
+}
+
+/* ---------- Compact Controls ---------- */
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 8px;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.controls select {
+  background: #1e4136;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 0.9rem;
+  height: 32px;
+}
+
+.controls button {
+  background: #00ff9f;
+  color: #0f2b23;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.9rem;
+  height: 32px;
+  white-space: nowrap;
+}
+
+.controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.controls button:hover:not(:disabled) {
+  background: #00d88c;
+}
+
+.status {
+  margin-bottom: 8px;
+  color: #e6ffe6;
+  font-size: 0.9rem;
+}
+
+/* Compact voice selection wrapper */
+.voice-control {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.voice-control label {
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+/* Even more compact for mobile */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  
+  .header h1 {
+    font-size: 1.1rem;
+    margin-bottom: 4px;
+  }
+  
+  .controls {
+    width: 100%;
+    justify-content: space-between;
+    gap: 4px;
+  }
+  
+  .voice-control {
+    flex: 1;
+    min-width: 120px;
+  }
+  
+  .controls select {
+    flex: 1;
+    min-width: 80px;
+  }
+  
+  .controls button {
+    flex: 1;
+    min-width: 90px;
+    max-width: 100px;
+  }
+}
+
+@media (max-width: 480px) {
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  
+  .voice-control {
+    min-width: 100%;
+  }
+  
+  .controls select, 
+  .controls button {
+    min-width: 100%;
+    height: 36px;
+  }
+  
+  .header h1 {
+    font-size: 1rem;
+  }
+}
+
+/* Ultra-compact for very small screens */
+@media (max-width: 360px) {
+  .controls {
+    gap: 4px;
+  }
+  
+  .controls select,
+  .controls button {
+    padding: 5px 8px;
+    font-size: 0.85rem;
+    height: 34px;
+  }
+  
+  .voice-control label {
+    font-size: 0.8rem;
+  }
+}
+
+/* Adjust transcript to account for compact controls */
+.main {
+  background: rgba(20, 40, 35, 0.9);
+  border: 1px solid rgba(0,255,159,0.1);
+  border-radius: 12px;
+  box-shadow: 0 0 30px rgba(0, 255, 140, 0.1);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 8px;
+}
+
+/* Ensure the transcript area gets more space */
+.transcript {
+  flex: 1;
+  min-height: 200px;
+}
+
+/* Add to your existing .controls button styles */
+.controls button#micBtn {
+  background: #ff6b35;
+  color: white;
+}
+
+.controls button#micBtn:hover:not(:disabled) {
+  background: #e55a2b;
+}
+
+.controls button#micBtn.blinking {
+  animation: blink 1s infinite;
+  background: #ff4444;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* iOS-specific mic button style */
+.controls button#micBtn.ios-mode {
+  background: #4285f4;
+}
+
+.controls button#micBtn.ios-mode:hover {
+  background: #3367d6;
+}
+
+/* Add to your existing transcript styles */
+.transcript .msg.user.speaking {
+  background: #c8e6c9;
+  border: 2px solid #4caf50;
+  animation: pulse-speak 2s infinite;
+}
+
+@keyframes pulse-speak {
+  0%, 100% { border-color: #4caf50; }
+  50% { border-color: #81c784; }
+}
+
+.live-text {
+  font-style: italic;
+  color: #2e7d32;
+}
+
+@media (max-width: 768px) {
+  .controls {
+    gap: 4px;
+  }
+  
+  .controls button {
+    min-width: 80px;
+    font-size: 0.8rem;
+    padding: 4px 8px;
+    height: 30px;
+  }
+  
+  .voice-control {
+    min-width: 120px;
+  }
+  
+  .voice-control select {
+    min-width: 70px;
+  }
+}
+
+@media (max-width: 480px) {
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .voice-control {
+    order: -1; /* Put voice selection first */
+    min-width: 100%;
+  }
+  
+  .controls button {
+    min-width: 100%;
+    height: 36px;
+  }
+  
+  /* Stack buttons vertically on very small screens */
+  .controls > * {
+    width: 100%;
+  }
+}
+
+/* Status message variations */
+.status.listening {
+  color: #4caf50;
+  font-weight: 600;
+}
+
+.status.recording {
+  color: #f44336;
+  font-weight: 600;
+  animation: pulse-red 1s infinite;
+}
+
+.status.therapist-speaking {
+  color: #ff9800;
+  font-weight: 600;
+}
+
+@keyframes pulse-red {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Add to your CSS */
+.ios-tap-prompt {
+  background: rgba(0, 255, 159, 0.2);
+  border: 2px solid #00ff9f;
+  border-radius: 10px;
+  padding: 15px;
+  text-align: center;
+  margin: 10px 0;
+  animation: pulse-tap 2s infinite;
+}
+
+@keyframes pulse-tap {
+  0%, 100% { border-color: #00ff9f; opacity: 1; }
+  50% { border-color: #00d88c; opacity: 0.8; }
+}
+
+/* Add to your CSS */
+.tap-prompt {
+  background: rgba(0, 255, 159, 0.15);
+  border: 2px solid #00ff9f;
+  border-radius: 12px;
+  padding: 15px;
+  text-align: center;
+  margin: 10px 0;
+  font-weight: 600;
+  color: #00ff9f;
+  cursor: pointer;
+  animation: pulse-tap 2s infinite;
+}
+
+.status.waiting {
+  color: #00ff9f !important;
+  font-weight: 600;
+  text-align: center;
+  padding: 10px;
+  background: rgba(0, 255, 159, 0.1);
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+@keyframes pulse-tap {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.02); }
+}
+
+/* trial_call.css */
+#micBtn.blinking {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 50%, 100% { opacity: 1; }
+  25%, 75% { opacity: 0.3; }
+}

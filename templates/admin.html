@@ -2,55 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/> <!-- 👈 ensures responsiveness -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Admin Panel - TheraLink</title>
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
-  <style>
-    body { margin:0; font-family:'Inter', system-ui, sans-serif; background:linear-gradient(135deg,#0f2b23,#112831); color:#fff; }
-    .navbar { background:rgba(15,43,35,0.95); padding:12px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,255,159,0.2); flex-wrap:wrap; }
-    .navbar a { color:#00ff9f; text-decoration:none; margin-left:16px; display:inline-block; margin-top:6px; }
-    .container { padding:20px; max-width:1300px; margin:auto; }
-    h2,h3 { color:#00ff9f; }
-    .card { background:rgba(20,40,35,0.95); border:1px solid rgba(0,255,159,0.15); border-radius:12px; padding:20px; margin-bottom:20px; }
-    .btn { background:#00ff9f; color:#0f2b23; font-weight:bold; border:none; border-radius:8px; padding:8px 14px; cursor:pointer; font-size:0.9rem; }
-    .btn:hover { background:#00d88c; }
-    input, textarea {
-      width:100%; padding:10px; margin:6px 0;
-      border:1px solid rgba(0,255,159,0.15); border-radius:8px;
-      background:#0f2b23; color:#fff;
-    }
-    /* ✅ Placeholder fix */
-    ::placeholder { color:#00ff9f !important; opacity:1 !important; }
-    :-ms-input-placeholder { color:#00ff9f !important; }
-    ::-ms-input-placeholder { color:#00ff9f !important; }
-
-    /* Tables */
-    .table-responsive { width:100%; overflow-x:auto; }
-    table { width:100%; border-collapse:collapse; margin-top:15px; }
-    th, td { border:1px solid rgba(0,255,159,0.15); padding:10px; text-align:left; white-space:nowrap; }
-    th { background:rgba(0,255,159,0.1); color:#00ff9f; }
-    tr:hover { background:rgba(0,255,159,0.08); }
-
-    .status-active { color:#00ff9f; font-weight:bold; }
-    .status-pending { color:#ffcc00; font-weight:bold; }
-    .status-inactive { color:#ff5555; font-weight:bold; }
-    .actions button { margin-right:6px; }
-
-    /* 👇 Mobile tweaks */
-    @media (max-width:768px) {
-      .navbar { flex-direction:column; align-items:flex-start; }
-      .navbar div { margin:4px 0; }
-      table { font-size:0.85rem; }
-      .btn { width:100%; margin-top:6px; }
-      th, td { padding:8px; }
-    }
-    @media (max-width:480px) {
-      .container { padding:12px; }
-      h2 { font-size:1.3rem; }
-      h3 { font-size:1.1rem; }
-      input, textarea, .btn { font-size:1rem; }
-    }
-  </style>
+  <!-- Link to external CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
 </head>
 <body>
 
@@ -74,24 +30,30 @@
     </form>
   </div>
 
-  <!-- Group Subscription -->
-  <div class="card">
-    <h3>Add Group Subscription</h3>
-    <form method="POST" action="/admin/group_subscribe">
+<!-- Group Subscription -->
+<div class="card">
+  <h3>Add Group Subscription</h3>
+  <form method="POST" action="/admin/group_subscribe" class="admin-form">
+    <div class="form-group">
       <input type="text" name="group_name" placeholder="Group name (e.g., AU_Students_2025)" required>
+    </div>
+    <div class="form-group">
       <textarea name="emails" placeholder="Enter emails separated by commas" rows="4" required></textarea>
-      <button type="submit" class="btn">Add Group</button>
-    </form>
-  </div>
+    </div>
+    <button type="submit" class="btn">Add Group</button>
+  </form>
+</div>
 
-  <!-- Add Individual User -->
-  <div class="card">
-    <h3>Add Individual User</h3>
-    <form method="POST" action="/admin/add_user">
+<!-- Add Individual User -->
+<div class="card">
+  <h3>Add Individual User</h3>
+  <form method="POST" action="/admin/add_user" class="admin-form">
+    <div class="form-group">
       <input type="email" name="email" placeholder="Enter user email" required>
-      <button type="submit" class="btn">Add User</button>
-    </form>
-  </div>
+    </div>
+    <button type="submit" class="btn">Add User</button>
+  </form>
+</div>
 
   <!-- Individual Users -->
   <div class="card">

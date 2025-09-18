@@ -16,7 +16,7 @@
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      padding: 15px; /* 👈 ensures content isn’t cut off on phones */
+      padding: 15px;
     }
     .login-box {
       background: rgba(20,40,35,0.95);
@@ -24,7 +24,7 @@
       border-radius: 12px;
       box-shadow: 0 0 20px rgba(0,255,159,0.2);
       width: 100%;
-      max-width: 400px; /* 👈 scales on desktop, fits phone screens */
+      max-width: 400px;
     }
     .login-box h2 {
       margin-bottom: 20px;
@@ -35,21 +35,32 @@
     .form-control {
       background: #112831;
       border: 1px solid #00ff9f;
-      color: #fff;
+      color: #fff; /* Fixed: Ensures text is visible */
     }
     .form-control:focus {
       box-shadow: 0 0 5px #00ff9f;
       border-color: #00ff9f;
       background: #132f39;
+      color: #fff; /* Fixed: Ensures text remains visible on focus */
     }
 
     /* ✅ Force placeholder color */
     ::placeholder {
-      color: #00ff9f !important; /* bright green to match theme */
+      color: #00ff9f !important;
       opacity: 1 !important;
     }
     :-ms-input-placeholder { color: #00ff9f !important; }
     ::-ms-input-placeholder { color: #00ff9f !important; }
+
+    /* ✅ Ensure text input color is always white */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover, 
+    input:-webkit-autofill:focus, 
+    input:-webkit-autofill:active {
+      -webkit-text-fill-color: #fff !important;
+      -webkit-box-shadow: 0 0 0px 1000px #112831 inset !important;
+      transition: background-color 5000s ease-in-out 0s;
+    }
 
     button {
       width: 100%;
@@ -65,13 +76,31 @@
       background: #00d88c;
     }
 
+    /* Password toggle button */
+    .password-toggle {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #00ff9f;
+      cursor: pointer;
+      width: auto;
+      padding: 0;
+    }
+
+    .password-container {
+      position: relative;
+    }
+
     /* 👇 small mobile tweak */
     @media (max-width: 576px) {
       .form-control, button {
         font-size: 16px; /* avoids iOS zoom issue */
       }
     }
-  </style>
+  </style
 </head>
 <body>
   <div class="login-box">

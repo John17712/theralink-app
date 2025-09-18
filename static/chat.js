@@ -1,352 +1,326 @@
-// =================== Local State ===================
-let sessions = JSON.parse(localStorage.getItem("sessions")) || {};
-let currentSessionId = localStorage.getItem("currentSessionId") || null;
-let sessionMode = "normal";
-let incognitoSessions = {};
-let translations = {};
+// ===== Local sessions =====
+// { id: {id,name:{en:"..."},messages:[{sender,text}]} }
+let chatSessions = JSON.parse(localStorage.getItem("chatSessions")) || {};
+let currentChatSessionId = localStorage.getItem("currentChatSessionId") || null;
 
-// =================== DOM Elements ===================
-const sessionList     = document.getElementById("sessionList");
-const chatBox         = document.getElementById("chatBox");
+const sessionListEl   = document.getElementById("chatSessionList");
+const newSessionBtn   = document.getElementById("newChatSessionBtn");
+const transcriptBox   = document.getElementById("transcriptBox");
+const chatStatus      = document.getElementById("chatStatus");
 const messageInput    = document.getElementById("messageInput");
 const sendBtn         = document.getElementById("sendBtn");
-const newSessionBtn   = document.getElementById("newSessionBtn");
-const modeSelector    = document.getElementById("modeSelector");
-const incognitoBanner = document.getElementById("incognitoBanner");
 const languageSelector = document.getElementById("languageSelector");
 
-// =================== Enable/Disable Input ===================
-function setInputEnabled(on) {
-  if (!messageInput || !sendBtn) return;
-  messageInput.disabled = !on;
-  sendBtn.disabled = !on;
-  if (on) setTimeout(() => messageInput.focus(), 0);
+let activeLang = localStorage.getItem("selectedLanguage") || "en";
+let translations = {};
+
+// ===== Utility =====
+function saveState() {
+  localStorage.setItem("chatSessions", JSON.stringify(chatSessions));
+  localStorage.setItem("currentChatSessionId", currentChatSessionId || "");
 }
 
-// =================== i18n ===================
+function uid() {
+  return "chat-" + Math.random().toString(36).slice(2, 9) + "-" + Date.now().toString(36);
+}
+
+// ===== Sidebar render =====
+function renderSessions() {
+  sessionListEl.innerHTML = "";
+  const ids = Object.keys(chatSessions).sort((a, b) => {
+    return (chatSessions[b]?.createdAt || 0) - (chatSessions[a]?.createdAt || 0);
+  });
+
+  ids.forEach((id) => {
+    const s = chatSessions[id];
+    if (s.name && typeof s.name === "string") {
+      s.name = { en: s.name };
+    }
+
+    const li = document.createElement("li");
+    li.className = id === currentChatSessionId ? "active" : "";
+    li.onclick = () => activateSession(id);
+
+    const title = document.createElement("div");
+    title.className = "session-title";
+
+    let displayName = "";
+    if (s.name && typeof s.name === "object") {
+      displayName =
+        s.name[activeLang] ||
+        s.name["en"] ||
+        translations["session_default"] ||
+        "Session";
+    } else {
+      displayName = translations["session_default"] || "Session";
+    }
+    title.textContent = displayName;
+
+    const actions = document.createElement("div");
+    actions.className = "session-actions";
+
+    const renameBtn = document.createElement("button");
+    renameBtn.title = translations["rename_prompt"] || "Rename";
+    renameBtn.textContent = "✏️";
+    renameBtn.onclick = (e) => {
+      e.stopPropagation();
+      manualRenameSession(id);
+    };
+
+    const delBtn = document.createElement("button");
+    delBtn.title = translations["delete_confirm"] || "Delete";
+    delBtn.textContent = "🗑";
+    delBtn.onclick = (e) => {
+      e.stopPropagation();
+      deleteSession(id);
+    };
+
+    actions.appendChild(renameBtn);
+    actions.appendChild(delBtn);
+
+    li.appendChild(title);
+    li.appendChild(actions);
+    sessionListEl.appendChild(li);
+  });
+}
+
+// ===== Manual Rename =====
+function manualRenameSession(id) {
+  const session = chatSessions[id];
+  if (!session) return;
+
+  const newName =
+    prompt(translations["rename_prompt"] || "Enter new session name:") || "";
+  if (!newName) return;
+
+  if (!session.name || typeof session.name !== "object") {
+    session.name = {};
+  }
+  session.name[activeLang] = newName;
+  saveState();
+  renderSessions();
+}
+
+// ===== Session lifecycle =====
+function addNewSession() {
+  const id = uid();
+  chatSessions[id] = {
+    id,
+    name: { [activeLang]: translations["new_session"] || "New Session" },
+    messages: [],
+    createdAt: Date.now(),
+  };
+  currentChatSessionId = id;
+  saveState();
+  renderSessions();
+  renderTranscript();
+  setStatus(translations["session_created"] || "Session created. You can start chatting.");
+}
+
+function deleteSession(id) {
+  if (!chatSessions[id]) return;
+  const wasActive = id === currentChatSessionId;
+  delete chatSessions[id];
+
+  if (wasActive) {
+    currentChatSessionId = null;
+    renderTranscript();
+    setStatus(translations["create_session_prompt"] || "Please create a new session to begin.");
+  }
+
+  saveState();
+  renderSessions();
+}
+
+function activateSession(id) {
+  currentChatSessionId = id;
+  saveState();
+  renderSessions();
+  renderTranscript();
+  setStatus("");
+}
+
+// ===== Transcript render =====
+function setStatus(text) {
+  chatStatus.textContent = text || "";
+  chatStatus.style.display = text ? "block" : "none";
+}
+
+function renderTranscript() {
+  transcriptBox.innerHTML = "";
+
+  if (!currentChatSessionId || !chatSessions[currentChatSessionId]) {
+    const p = document.createElement("p");
+    p.className = "transcript-placeholder";
+    p.textContent =
+      translations["chat_transcript_placeholder"] ||
+      "Messages will appear here once the session begins.";
+    transcriptBox.appendChild(p);
+    return;
+  }
+
+  const msgs = chatSessions[currentChatSessionId].messages || [];
+  if (msgs.length === 0) {
+    const p = document.createElement("p");
+    p.className = "transcript-placeholder";
+    p.textContent =
+      translations["chat_start_placeholder"] ||
+      "Welcome — start your conversation when you’re ready.";
+    transcriptBox.appendChild(p);
+  } else {
+    msgs.forEach((m) => {
+      const div = document.createElement("div");
+      div.className = `msg ${m.sender}`;
+      const label =
+        m.sender === "user"
+          ? translations["you_label"] || "You"
+          : translations["therapist_label"] || "Therapist";
+      div.innerHTML = `<strong>${label}:</strong> ${m.text}`;
+      transcriptBox.appendChild(div);
+    });
+    transcriptBox.scrollTop = transcriptBox.scrollHeight;
+  }
+}
+
+// ===== Messaging =====
+async function sendMessage() {
+  const text = (messageInput.value || "").trim();
+  if (!text) return;
+
+  if (!currentChatSessionId || !chatSessions[currentChatSessionId]) {
+    setStatus(translations["create_session_prompt"] || "Please create a new session first.");
+    return;
+  }
+
+  chatSessions[currentChatSessionId].messages.push({ sender: "user", text });
+  messageInput.value = "";
+  renderTranscript();
+  saveState();
+
+  try {
+    const res = await fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: "full_user",
+        session_id: currentChatSessionId,
+        message: text,
+        language: activeLang,
+      }),
+    });
+
+    const data = await res.json();
+    const replyText = data.reply || "Sorry, something went wrong.";
+
+    chatSessions[currentChatSessionId].messages.push({
+      sender: "therapist",
+      text: replyText,
+    });
+    renderTranscript();
+    saveState();
+
+    // Auto-rename
+    const session = chatSessions[currentChatSessionId];
+    let currentName =
+      session.name && typeof session.name === "object"
+        ? session.name[activeLang]
+        : session.name;
+    const needsName =
+      !currentName ||
+      currentName === (translations["new_session"] || "New Session");
+    if (needsName && text) {
+      autoRenameCurrentSession(text);
+    }
+  } catch (err) {
+    console.error("Chat error:", err);
+    setStatus("Sorry, something went wrong.");
+  }
+}
+
+// ===== Auto-rename =====
+async function autoRenameCurrentSession(sampleText) {
+  try {
+    const res = await fetch("/chat/rename_session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: sampleText || "Therapy session",
+        language: activeLang,
+      }),
+    });
+    const data = await res.json();
+    const newName =
+      (data && data.name) || translations["session_default"] || "Session";
+    if (currentChatSessionId && chatSessions[currentChatSessionId]) {
+      if (
+        !chatSessions[currentChatSessionId].name ||
+        typeof chatSessions[currentChatSessionId].name !== "object"
+      ) {
+        chatSessions[currentChatSessionId].name = {};
+      }
+      chatSessions[currentChatSessionId].name[activeLang] = newName;
+      saveState();
+      renderSessions();
+    }
+  } catch (e) {
+    console.error("Rename error:", e);
+  }
+}
+
+// ===== Language =====
 async function loadTranslations(lang) {
   try {
     const res = await fetch(`/static/lang/${lang}.json`);
     if (!res.ok) throw new Error("Could not load translations");
-    translations = await res.json();
-    applyTranslations();
+    const dict = await res.json();
+
+    translations = dict;
     localStorage.setItem("selectedLanguage", lang);
-  } catch (err) {
-    console.warn("Could not load language file:", lang, err);
-    translations = {}; // fallback to empty object
-  }
-}
+    activeLang = lang;
 
-function applyTranslations() {
-  if (!translations || typeof translations !== "object") return;
-
-  // Update welcome message
-  const wm = document.getElementById("welcomeMessage");
-  if (wm) {
-    const welcome = translations["welcome_message"] || "Welcome to your personal chat.";
-    const prompt  = translations["start_prompt"] || "Please create a new session below to begin.";
-    wm.innerHTML = `${welcome}<br>${prompt}`;
-  }
-
-  // Translate all elements with data-i18n
-  document.querySelectorAll("[data-i18n]").forEach(el => {
-    const key = el.getAttribute("data-i18n");
-    const value = translations[key];
-    if (!value) return; // ✅ skip missing keys
-    if (["input","textarea"].includes(el.tagName.toLowerCase())) {
-      el.placeholder = value;
-    } else {
-      el.textContent = value;
-    }
-  });
-
-  // Translate placeholders
-  document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
-    const key = el.getAttribute("data-i18n-placeholder");
-    const value = translations[key];
-    if (value) el.setAttribute("placeholder", value);
-  });
-
-  // Handle RTL languages
-  const lang = localStorage.getItem("selectedLanguage") || "en";
-  document.body.setAttribute("dir", lang === "ar" ? "rtl" : "ltr");
-}
-
-// =================== Mode Switch ===================
-modeSelector.addEventListener("change", () => {
-  sessionMode = modeSelector.value;
-  currentSessionId = null;
-  incognitoBanner.style.display = sessionMode === "incognito" ? "block" : "none";
-  renderSessions();
-  renderMessages(null);
-  setInputEnabled(false);
-  if (sessionMode === "normal") saveState();
-});
-
-// =================== Persistence ===================
-function saveState() {
-  if (sessionMode === "normal") {
-    localStorage.setItem("sessions", JSON.stringify(sessions));
-    localStorage.setItem("currentSessionId", currentSessionId || "");
-  }
-}
-
-function persistToDB(id) {
-  try {
-    const s = sessions[id];
-    if (!s) return;
-    fetch("/sessions/save", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({
-        session_id: id,
-        name: s.name || "Session",
-        messages: s.messages || [],
-        kind: "chat"
-      })
-    }).catch(() => {});
-  } catch (_) {}
-}
-
-// =================== Render ===================
-function renderSessions() {
-  sessionList.innerHTML = "";
-  const source = sessionMode === "normal" ? sessions : incognitoSessions;
-
-  Object.entries(source).forEach(([id, session]) => {
-    const li = document.createElement("li");
-    li.className = currentSessionId === id ? "active" : "";
-    li.innerHTML = `
-      <span class="session-title">${session.name || "Unnamed Session"}</span>
-      <div class="session-actions">
-        <button onclick="renameSession('${id}')" title="${translations['rename_prompt'] || 'Rename'}">✏️</button>
-        <button onclick="deleteSession('${id}')" title="${translations['delete_confirm'] || 'Delete'}">🗑️</button>
-      </div>
-    `;
-    li.onclick = (e) => {
-      if (e.target.tagName.toLowerCase() !== "button") {
-        loadSession(id);
-      }
-    };
-    sessionList.appendChild(li);
-  });
-}
-
-function renderMessages(session) {
-  chatBox.innerHTML = "";
-
-  if (!session) {
-    chatBox.innerHTML = `
-      <div class="welcome-message" id="welcomeMessage">
-        <span>${translations["welcome_message"] || "Welcome to your personal chat."}</span><br>
-        <span>${translations["start_prompt"] || "Please create a new session below to begin."}</span>
-      </div>`;
-    setInputEnabled(false);
-    return;
-  }
-
-  setInputEnabled(true);
-
-  if (session.messages.length === 0) {
-    chatBox.innerHTML = `
-      <div class="welcome-message" id="welcomeMessage">
-        <span>${translations["chat_ready"] || "Your personal chat is ready."}</span><br>
-        <span>${translations["chat_start"] || "Start the conversation when you're ready."}</span>
-      </div>`;
-  }
-
-  session.messages.forEach(msg => {
-    if (!msg.text || msg.text.trim() === "") return;
-    const div = document.createElement("div");
-    div.className = `msg ${msg.sender}`;
-    div.innerHTML = `<span>${msg.text}</span>`;
-    chatBox.appendChild(div);
-  });
-
-  chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-function loadSession(id) {
-  currentSessionId = id;
-  const session = sessionMode === "normal" ? sessions[id] : incognitoSessions[id];
-  renderSessions();
-  renderMessages(session);
-  setInputEnabled(!!session);
-  if (sessionMode === "normal") saveState();
-}
-
-// =================== Session CRUD ===================
-function addNewSession() {
-  const id = Date.now().toString();
-  const session = { name: translations["new_session"] || "New Session", messages: [] };
-  currentSessionId = id;
-
-  if (sessionMode === "normal") {
-    sessions[id] = session;
-    saveState();
-    persistToDB(id); // create immediately in backend
-  } else {
-    incognitoSessions[id] = session;
-  }
-
-  renderSessions();
-  renderMessages(session);
-  setInputEnabled(true);
-}
-
-function deleteSession(id) {
-  if (!confirm(translations["delete_confirm"] || "Delete this session?")) return;
-
-  if (sessionMode === "normal") {
-    fetch("/sessions/delete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ session_id: id })
-    }).catch(() => {});
-    delete sessions[id];
-  } else {
-    delete incognitoSessions[id];
-  }
-
-  if (id === currentSessionId) currentSessionId = null;
-  renderSessions();
-  renderMessages(null);
-  setInputEnabled(false);
-  saveState();
-}
-
-function renameSession(id) {
-  const name = prompt(translations["rename_prompt"] || "Enter new session name:");
-  if (!name) return;
-
-  if (sessionMode === "normal") {
-    sessions[id].name = name;
-    persistToDB(id);
-    saveState();
-  } else {
-    incognitoSessions[id].name = name;
-  }
-  renderSessions();
-}
-window.renameSession = renameSession;
-window.deleteSession = deleteSession;
-
-
-
-
-// =================== Messaging ===================
-function sendMessage() {
-  const text = (messageInput.value || "").trim();
-  if (!text || !currentSessionId) {
-    messageInput.value = "";
-    return;
-  }
-
-  const id = currentSessionId;
-  const source = sessionMode === "normal" ? sessions : incognitoSessions;
-  const session = source[id] || { name: "Session", messages: [] };
-
-  // Push user message
-  session.messages.push({ sender: "user", text });
-  if (sessionMode === "normal") sessions[id] = session; else incognitoSessions[id] = session;
-
-  renderMessages(session);
-  messageInput.value = "";
-
-  if (sessionMode === "normal") {
-    saveState();
-    persistToDB(id);
-  }
-
-  const selectedLanguage = localStorage.getItem("selectedLanguage") || "en";
-
-  fetch("/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      user_id: id,
-      session_id: id,
-      message: text,
-      language: selectedLanguage
-    })
-  })
-    .then(res => res.json())
-    .then(data => {
-      const reply = data && data.reply ? data.reply : "…";
-      session.messages.push({ sender: "therapist", text: reply });
-      renderMessages(session);
-
-      if (sessionMode === "normal") {
-        sessions[id] = session;
-        if (session.name === (translations["new_session"] || "New Session")) {
-          autoRename(id, text, selectedLanguage);
+    document.querySelectorAll("[data-i18n]").forEach((el) => {
+      const key = el.getAttribute("data-i18n");
+      if (dict[key]) {
+        if (["input", "textarea"].includes(el.tagName.toLowerCase())) {
+          el.placeholder = dict[key];
+        } else {
+          el.textContent = dict[key];
         }
-        saveState();
-        persistToDB(id);
-      } else {
-        incognitoSessions[id] = session;
       }
-    })
-    .catch(err => console.error("Chat error:", err));
+    });
+
+    document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+      const key = el.getAttribute("data-i18n-placeholder");
+      if (dict[key]) el.setAttribute("placeholder", dict[key]);
+    });
+
+    document.body.setAttribute("dir", lang === "ar" ? "rtl" : "ltr");
+
+    renderSessions();
+    renderTranscript();
+  } catch (err) {
+    console.error("Error loading language:", err);
+  }
 }
 
-function autoRename(id, userPrompt, language) {
-  fetch("/chat/rename_session", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message: userPrompt, language })
-  })
-    .then(res => res.json())
-    .then(data => {
-      const newName = data && data.name ? data.name : "Session";
-      if (sessions[id]) {
-        sessions[id].name = newName;
-        persistToDB(id);
-        saveState();
-        renderSessions();
-      }
-    })
-    .catch(err => console.error("AutoRename error:", err));
-}
-
-// =================== Events ===================
-sendBtn.onclick = sendMessage;
-newSessionBtn.onclick = addNewSession;
-
-messageInput.addEventListener("keydown", e => {
+// ===== Events =====
+newSessionBtn.addEventListener("click", addNewSession);
+sendBtn.addEventListener("click", sendMessage);
+messageInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     sendMessage();
   }
 });
-
-languageSelector.addEventListener("change", () => {
-  const lang = languageSelector.value;
-  loadTranslations(lang);
-
-  // ✅ Also re-auto-rename sessions into new language
-  Object.entries(sessions).forEach(([id, session]) => {
-    if (session.messages.length > 0) {
-      autoRename(id, session.messages[0].text, lang);
-    }
-  });
+languageSelector.addEventListener("change", (e) => {
+  loadTranslations(e.target.value);
 });
 
-// =================== Boot ===================
-window.onload = async () => {
-  const savedLang = localStorage.getItem("selectedLanguage") || "en";
-  if (languageSelector) languageSelector.value = savedLang;
-  await loadTranslations(savedLang);
-
-  sessionMode = modeSelector.value;
-  incognitoBanner.style.display = sessionMode === "incognito" ? "block" : "none";
-
+// ===== Init =====
+(function init() {
   renderSessions();
-  if (sessionMode === "normal" && currentSessionId && sessions[currentSessionId]) {
-    loadSession(currentSessionId);
-  } else if (!currentSessionId) {
-    renderMessages(null);
-  }
-};
+  renderTranscript();
+  const savedLang = localStorage.getItem("selectedLanguage") || "en";
+  loadTranslations(savedLang);
+})();
+

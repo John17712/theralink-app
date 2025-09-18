@@ -1,184 +1,389 @@
+/* ---------- Base ---------- */
 body {
-    margin: 0;
-    font-family: 'Inter', sans-serif;
-    background: linear-gradient(135deg, #0f2b23, #112831);
-    color: #ffffff;
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: linear-gradient(135deg, #0f2b23, #112831);
+  color: #ffffff;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Navbar */
-nav {
-    background: rgba(15, 43, 35, 0.95);
-    padding: 0.8rem 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid rgba(0, 255, 159, 0.2);
+/* ---------- Navbar ---------- */
+.navbar {
+  background: rgba(15, 43, 35, 0.95);
+  padding: 0.8rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(0, 255, 159, 0.2);
+  position: relative;
 }
 
-nav .logo {
-    font-size: 1.4rem;
-    font-weight: bold;
-    color: #00ff9f;
-    text-decoration: none;
-    white-space: nowrap;
+.nav-left, .nav-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
-nav .nav-links {
-    display: flex;
-    gap: 1rem;
+.brand-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
 }
 
-nav .nav-links a {
-    padding: 0.4rem 1rem;
-    border: 1px solid #00ff9f;
-    border-radius: 6px;
-    color: #00ff9f;
-    text-decoration: none;
-    font-weight: 500;
-    transition: all 0.3s ease;
+.logo-img {
+  height: 32px;
+  margin-right: 8px;
 }
 
-nav .nav-links a:hover {
-    background: #00ff9f;
-    color: #0f2b23;
+.brand-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #00ff9f;
 }
 
-/* Layout wrapper for hero + pricing */
+.nav-item {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+  display: none; /* Hidden by default on mobile */
+}
+
+.nav-item:hover { color: #00ff9f; }
+
+.language-selector {
+  background: #1e4136;
+  color: #fff;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  height: 36px;
+  font-size: 0.9rem;
+  display: none; /* Hidden by default on mobile */
+}
+
+/* Mobile menu button */
+.menu-toggle {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 30px;
+  height: 25px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.menu-toggle span {
+  width: 100%;
+  height: 3px;
+  background-color: #00ff9f;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+/* Mobile menu */
+.mobile-menu {
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 70%;
+  height: 100vh;
+  background: rgba(15, 43, 35, 0.98);
+  z-index: 1000;
+  padding: 2rem;
+  transition: right 0.3s ease;
+  box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-menu.active {
+  right: 0;
+}
+
+.menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 255, 159, 0.2);
+}
+
+.close-menu {
+  background: none;
+  border: none;
+  color: #00ff9f;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.mobile-nav-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.mobile-nav-item {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1.1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mobile-language-selector {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mobile-language-selector select {
+  width: 100%;
+  padding: 0.8rem;
+  border-radius: 6px;
+  border: none;
+  background-color: #1e4136;
+  color: #ffffff;
+  font-size: 1rem;
+}
+
+/* Overlay when menu is open */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  display: none;
+}
+
+.overlay.active {
+  display: block;
+}
+
+/* ---------- Layout ---------- */
 .main-sections {
-    display: flex;
-    justify-content: center;
-    align-items: stretch; /* Equal height for both sections */
-    gap: 2rem;
-    flex-wrap: wrap;
-    margin: 2rem auto;
-    max-width: 1100px;
-    padding: 0 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin: 2rem auto;
+  max-width: 1100px;
+  padding: 0 1rem;
 }
 
-/* Hero & Pricing Boxes */
 .container, .pricing {
-    flex: 1 1 450px;
-    max-width: 500px;
-    background: rgba(20, 40, 35, 0.9);
-    border-radius: 12px;
-    box-shadow: 0 0 30px rgba(0, 255, 140, 0.15);
-    padding: 2rem;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between; /* Ensures bottom alignment of buttons */
+  flex: 1 1 450px;
+  max-width: 500px;
+  background: rgba(20, 40, 35, 0.9);
+  border-radius: 12px;
+  box-shadow: 0 0 30px rgba(0, 255, 140, 0.15);
+  padding: 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
-/* Hero Section */
+/* ---------- Hero ---------- */
 h1 {
-    font-size: 2.5rem;
-    margin-bottom: 0.2rem;
-    color: #00ff9f;
+  font-size: 2.2rem;
+  margin-bottom: 0.5rem;
+  color: #00ff9f;
 }
 
 .tagline {
-    font-size: 1rem;
-    color: #cccccc;
-    margin-bottom: 2rem;
+  font-size: 1rem;
+  color: #cccccc;
+  margin-bottom: 2rem;
 }
 
 .mode-selection {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex-grow: 1; /* Fills vertical space for proper centering */
-    justify-content: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-grow: 1;
+  justify-content: center;
 }
 
-.mode-selection label {
-    font-size: 1rem;
-    margin-bottom: 1rem;
-    color: #ffffff;
+.mode-selection p {
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
 }
 
 select {
-    padding: 0.5rem;
-    border-radius: 6px;
-    border: none;
-    background-color: #1e4136;
-    color: #ffffff;
-    font-size: 1rem;
-    margin-bottom: 1.5rem;
+  padding: 0.6rem;
+  border-radius: 6px;
+  border: none;
+  background-color: #1e4136;
+  color: #ffffff;
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.buttons a button {
-    margin: 0.5rem;
-    padding: 0.8rem 1.5rem;
-    font-size: 1rem;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    background: #00ff9f;
-    color: #0f2b23;
-    font-weight: bold;
-    transition: background 0.3s;
+/* ---------- Buttons ---------- */
+.buttons a button,
+.pricing button {
+  margin: 0.5rem;
+  padding: 0.9rem 1.5rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #00ff9f;
+  color: #0f2b23;
+  font-weight: bold;
+  transition: background 0.3s;
 }
 
-.buttons a button:hover {
-    background: #00d88c;
+.buttons a button:hover,
+.pricing button:hover {
+  background: #00d88c;
 }
 
-/* Pricing Section */
+/* ---------- Pricing ---------- */
 .pricing h2 {
-    color: #00ff9f;
-    margin-bottom: 1rem;
+  color: #00ff9f;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
 }
 
 .pricing .price {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #ffffff;
-    margin: 1rem 0;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #ffffff;
+  margin: 1rem 0;
 }
 
 .pricing ul {
-    list-style: none;
-    padding: 0;
-    margin: 1rem 0;
-    color: #cccccc;
-    flex-grow: 1; /* Pushes button to bottom */
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+  color: #cccccc;
+  flex-grow: 1;
 }
 
 .pricing ul li {
-    margin: 0.5rem 0;
+  margin: 0.5rem 0;
 }
 
-.pricing button {
-    padding: 0.8rem 1.5rem;
-    font-size: 1rem;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    background: #00ff9f;
-    color: #0f2b23;
-    font-weight: bold;
-    transition: background 0.3s;
-}
-
-.pricing button:hover {
-    background: #00d88c;
-}
-
-/* Footer */
+/* ---------- Footer ---------- */
 footer {
-    margin-top: 2rem;
-    padding: 1rem;
-    text-align: center;
-    font-size: 0.9rem;
-    color: #cccccc;
+  margin-top: 2rem;
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #cccccc;
 }
 
 footer a {
-    color: #00ff9f;
-    text-decoration: none;
-    margin: 0 0.5rem;
+  color: #00ff9f;
+  text-decoration: none;
+  margin: 0 0.5rem;
 }
 
 footer a:hover {
-    text-decoration: underline;
+  text-decoration: underline;
+}
+
+/* ---------- Responsive ---------- */
+
+/* Desktop - show regular nav items */
+@media screen and (min-width: 769px) {
+  .nav-item, .language-selector {
+    display: block !important;
+  }
+  
+  .menu-toggle {
+    display: none;
+  }
+}
+
+/* Tablet and below */
+@media screen and (max-width: 768px) {
+  .menu-toggle {
+    display: flex;
+  }
+  
+  .container, .pricing {
+    max-width: 95%;
+    padding: 2.5rem;
+    border-radius: 16px;
+  }
+
+  h1 {
+    font-size: 2.2rem;
+  }
+  
+  .tagline {
+    font-size: 1.1rem;
+  }
+  
+  .pricing h2 {
+    font-size: 1.6rem;
+  }
+  
+  .pricing .price {
+    font-size: 2rem;
+  }
+  
+  .buttons a button,
+  .pricing button {
+    font-size: 1.1rem;
+    padding: 1rem 2rem;
+  }
+}
+
+/* Phone and below */
+@media screen and (max-width: 480px) {
+  .navbar {
+    padding: 0.8rem 1rem;
+  }
+  
+  .main-sections {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .container, .pricing {
+    max-width: 100%;
+    padding: 2rem 1.5rem;
+    border-radius: 14px;
+  }
+
+  h1 {
+    font-size: 1.8rem;
+  }
+  
+  .tagline {
+    font-size: 1rem;
+  }
+  
+  .pricing h2 {
+    font-size: 1.4rem;
+  }
+  
+  .pricing .price {
+    font-size: 1.8rem;
+  }
+  
+  .buttons a button,
+  .pricing button {
+    width: 100%;
+    margin: 0.5rem 0;
+    font-size: 1rem;
+    padding: 1rem;
+  }
+  
+  .mobile-menu {
+    width: 85%;
+  }
 }

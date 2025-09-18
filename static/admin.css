@@ -1,0 +1,322 @@
+/* ---------- Base Styles ---------- */
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: linear-gradient(135deg, #0f2b23, #112831);
+  color: #fff;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+/* ---------- Navbar ---------- */
+.navbar {
+  background: rgba(15, 43, 35, 0.95);
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(0, 255, 159, 0.2);
+  flex-wrap: wrap;
+}
+
+.navbar a {
+  color: #00ff9f;
+  text-decoration: none;
+  margin-left: 16px;
+  display: inline-block;
+  margin-top: 6px;
+}
+
+/* ---------- Container ---------- */
+.container {
+  padding: 20px;
+  max-width: 1300px;
+  margin: auto;
+  box-sizing: border-box; /* Include padding in width calculation */
+}
+
+/* ---------- Typography ---------- */
+h2, h3 {
+  color: #00ff9f;
+  margin-top: 0;
+  word-wrap: break-word; /* Prevent long words from overflowing */
+}
+
+/* ---------- Cards ---------- */
+.card {
+  background: rgba(20, 40, 35, 0.95);
+  border: 1px solid rgba(0, 255, 159, 0.15);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-sizing: border-box; /* Include padding in width calculation */
+  overflow: hidden; /* Prevent content from overflowing */
+  width: 100%;
+}
+
+/* ---------- Forms ---------- */
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  background: #00ff9f;
+  color: #0f2b23;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background 0.3s;
+  align-self: flex-start;
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.btn:hover {
+  background: #00d88c;
+}
+
+/* ---------- Form Elements ---------- */
+input, textarea {
+  width: 100%;
+  padding: 12px;
+  margin: 4px 0;
+  border: 1px solid rgba(0, 255, 159, 0.3);
+  border-radius: 8px;
+  background: #0f2b23;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.95rem;
+  box-sizing: border-box; /* Include padding in width calculation */
+}
+
+input:focus, textarea:focus {
+  outline: none;
+  border-color: #00ff9f;
+  box-shadow: 0 0 0 2px rgba(0, 255, 159, 0.2);
+}
+
+/* Placeholder styling */
+::placeholder {
+  color: #00ff9f !important;
+  opacity: 0.7 !important;
+}
+
+:-ms-input-placeholder {
+  color: #00ff9f !important;
+}
+
+::-ms-input-placeholder {
+  color: #00ff9f !important;
+}
+
+/* ---------- Tables ---------- */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 15px;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+  box-sizing: border-box;
+}
+
+th, td {
+  border: 1px solid rgba(0, 255, 159, 0.15);
+  padding: 10px;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+th {
+  background: rgba(0, 255, 159, 0.1);
+  color: #00ff9f;
+}
+
+tr:hover {
+  background: rgba(0, 255, 159, 0.08);
+}
+
+/* Status indicators */
+.status-active {
+  color: #00ff9f;
+  font-weight: bold;
+}
+
+.status-pending {
+  color: #ffcc00;
+  font-weight: bold;
+}
+
+.status-inactive {
+  color: #ff5555;
+  font-weight: bold;
+}
+
+/* Action buttons */
+.actions {
+  white-space: nowrap;
+}
+
+.actions button {
+  margin-right: 6px;
+}
+
+/* ---------- Responsive Design ---------- */
+
+/* Tablet and below */
+@media screen and (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .navbar div {
+    margin: 4px 0;
+  }
+  
+  .container {
+    padding: 15px;
+  }
+  
+  .card {
+    padding: 15px;
+  }
+  
+  table {
+    font-size: 0.85rem;
+  }
+  
+  th, td {
+    padding: 8px 6px;
+  }
+  
+  .btn {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    align-self: stretch;
+  }
+  
+  .admin-form {
+    gap: 10px;
+  }
+  
+  input, textarea {
+    padding: 10px;
+  }
+}
+
+/* Mobile and below */
+@media screen and (max-width: 480px) {
+  body {
+    padding: 0;
+  }
+  
+  .container {
+    padding: 10px;
+  }
+  
+  .card {
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+  }
+  
+  h2 {
+    font-size: 1.3rem;
+  }
+  
+  h3 {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+  }
+  
+  input, textarea {
+    font-size: 16px; /* Prevent zoom on iOS */
+    padding: 12px;
+  }
+  
+  .btn {
+    font-size: 1rem;
+    padding: 12px;
+  }
+  
+  th, td {
+    padding: 6px 4px;
+    font-size: 0.8rem;
+  }
+  
+  /* Stack action buttons on very small screens */
+  .actions {
+    white-space: normal;
+  }
+  
+  .actions button {
+    display: block;
+    width: 100%;
+    margin-bottom: 4px;
+  }
+  
+  .admin-form {
+    gap: 8px;
+  }
+}
+
+/* Special handling for very small screens */
+@media screen and (max-width: 360px) {
+  .container {
+    padding: 8px;
+  }
+  
+  .card {
+    padding: 12px;
+  }
+  
+  th, td {
+    padding: 4px 2px;
+    font-size: 0.75rem;
+  }
+  
+  .btn {
+    padding: 10px;
+    font-size: 0.85rem;
+  }
+  
+  input, textarea {
+    padding: 10px;
+  }
+}
+
+/* Fix for long text in table cells */
+td {
+  word-break: break-word;
+  max-width: 200px;
+}
+
+/* Ensure textareas don't overflow */
+textarea {
+  resize: vertical;
+  min-height: 100px;
+  max-width: 100%;
+}

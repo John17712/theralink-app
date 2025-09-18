@@ -3,247 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title data-i18n="chat_title">Theralink Chat</title>
+  <title data-i18n="chat_title">Theralink — Chat</title>
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
-
-  <link rel="stylesheet" href="{{ url_for('static', filename='chat.css') }}" />
-
-  <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      background: linear-gradient(135deg, #0f2b23, #112831);
-      color: #fff;
-      overflow: hidden;
-    }
-
-    /* ---------- Navbar ---------- */
-    .navbar {
-      background-color: rgba(15, 43, 35, 0.95);
-      padding: 12px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid rgba(0,255,159,0.2);
-      position: relative;
-      z-index: 1000;
-    }
-    .nav-left, .nav-right { display: flex; align-items: center; gap: 16px; }
-    .nav-item { color: #fff; text-decoration: none; font-weight: 600; }
-    .nav-item:hover, .nav-item.active { color: #00ff9f; }
-    .language-selector {
-      background: #1e4136; color: #fff; border: none; padding: 6px 10px; border-radius: 6px;
-    }
-    .navbar-disclaimer { color: #bfead8; font-weight: 600; font-style: italic; }
-
-    /* Menu button */
-    .menu-btn {
-      background: none;
-      border: none;
-      color: #00ff9f;
-      font-size: 1.6rem;
-      cursor: pointer;
-      margin-right: 12px;
-      padding: 4px 8px;
-      border-radius: 6px;
-    }
-    .menu-btn:hover {
-      background: rgba(0,255,159,0.1);
-    }
-
-    /* Dropdown links */
-    .nav-links {
-      display: flex;
-      flex-direction: column;
-      position: absolute;
-      top: 60px;
-      left: 20px;
-      background: rgba(20,40,35,0.95);
-      padding: 12px 20px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-
-      max-height: 0;
-      opacity: 0;
-      overflow: hidden;
-      transition: max-height 0.3s ease, opacity 0.3s ease;
-    }
-    .nav-links.show {
-      max-height: 300px;
-      opacity: 1;
-    }
-    .nav-links a {
-      margin: 6px 0;
-      color: #fff;
-      text-decoration: none;
-      font-weight: 600;
-    }
-    .nav-links a:hover,
-    .nav-links a.active {
-      color: #00ff9f;
-    }
-
-    /* ---------- Layout ---------- */
-    .container {
-      display: grid;
-      grid-template-columns: 260px 1fr;
-      gap: 44px;
-      height: calc(100vh - 60px);
-      padding: 16px;
-      box-sizing: border-box;
-    }
-
-    .sidebar {
-      background: rgba(20, 40, 35, 0.9);
-      border: 1px solid rgba(0,255,159,0.1);
-      border-radius: 12px;
-      box-shadow: 0 0 30px rgba(0, 255, 140, 0.1);
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-    }
-    .sidebar h2 { margin: 0 0 8px 0; color: #00ff9f; font-size: 1.1rem; }
-    #sessionList { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; }
-    #sessionList li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-radius: 8px; cursor: pointer; }
-    #sessionList li:hover { background: rgba(0,255,159,0.08); }
-    #sessionList li.active { background: rgba(0,255,159,0.14); }
-    .session-title { font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .session-actions button { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 1rem; }
-
-    #modeSelector {
-      margin-bottom: 10px;
-      background: #0f2b23;
-      border: 1px solid rgba(0,255,159,0.2);
-      border-radius: 8px;
-      padding: 6px 8px;
-      color: #fff;
-    }
-
-    #newSessionBtn {
-      margin-top: 10px;
-      background: #00ff9f; color: #0f2b23;
-      font-weight: 700; border: 0; border-radius: 10px;
-      padding: 10px 12px; cursor: pointer;
-    }
-    #newSessionBtn:hover { background: #00d88c; }
-
-    .chat-container {
-      background: rgba(20, 40, 35, 0.9);
-      border: 1px solid rgba(0,255,159,0.1);
-      border-radius: 12px;
-      box-shadow: 0 0 30px rgba(0, 255, 140, 0.1);
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-    }
-
-    .banner {
-      margin-bottom: 10px;
-      background: rgba(0,255,159,0.1);
-      padding: 8px;
-      border-radius: 8px;
-      color: #eafff4;
-      font-size: 0.9rem;
-    }
-
-    .chat-box {
-      background: #0f2b23;
-      border: 1px solid rgba(0,255,159,0.1);
-      border-radius: 10px;
-      padding: 12px;
-      flex: 1;
-      overflow-y: auto;
-      color: #eafff4;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .welcome-message { color: #bfead8; text-align: center; }
-
-    .chat-input {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 10px;
-      margin-top: 12px;
-    }
-    .chat-input textarea {
-      background: #0f2b23; color: #fff;
-      border: 1px solid rgba(0,255,159,0.15);
-      border-radius: 10px; padding: 10px;
-      min-height: 60px; resize: vertical; outline: none;
-    }
-    .chat-input button {
-      background: #00ff9f; color: #0f2b23;
-      border: none; border-radius: 10px;
-      padding: 10px 14px; font-weight: 700; cursor: pointer;
-    }
-    .chat-input button:hover { background: #00d88c; }
-
-    .brand {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: #00ff9f;
-      margin-right: 20px;
-      letter-spacing: 1px;
-    }
-    .logo-img { height: 32px; margin-right: 8px; vertical-align: middle; }
-    .brand-link { display: flex; align-items: center; text-decoration: none; margin-right: 20px; }
-    .brand-name { font-size: 1.2rem; font-weight: 700; color: #00ff9f; }
-    .brand-link:hover .brand-name { color: #00d88c; }
-
-    /* ---------- Mobile Responsive Fix ---------- */
-@media (max-width: 768px) {
-  .navbar {
-    flex-wrap: wrap;
-    padding: 10px 14px;
-  }
-
-  .nav-left, .nav-right {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-    width: 100%;
-  }
-
-  .nav-links {
-    position: static;
-    flex-direction: column;
-    background: transparent;
-    padding: 0;
-    box-shadow: none;
-    max-height: none;
-    opacity: 1;
-  }
-
-  .nav-links a {
-    display: block;
-    margin: 4px 0;
-  }
-
-  .language-selector {
-    width: 100%;
-  }
-
-  .container {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .sidebar {
-    order: 2;
-    min-height: auto;
-  }
-
-  .chat-container {
-    order: 1;
-  }
-}
-
-  </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='chat.css') }}">
 </head>
 <body>
 
@@ -260,92 +22,434 @@
     </a>
   </div>
 
-  <!-- Dropdown menu -->
-  <div class="nav-links" id="navLinks">
-    <a href="/dashboard" class="nav-item" data-i18n="nav_home">Home</a>
-    <a href="/chat_page" class="nav-item active" data-i18n="nav_chat">Chat</a>
-    <a href="/call_page" class="nav-item" data-i18n="nav_call">Call</a>
-  </div>
-
+  <!-- Right: language selector -->
   <div class="nav-right">
-    <select id="languageSelector" class="language-selector" aria-label="Language">
-      <option value="en">English</option>
-      <option value="es">Español</option>
-      <option value="fr">Français</option>
-      <option value="sw">Swahili</option>
-      <option value="de">Deutsch</option>
-      <option value="it">Italiano</option>
-      <option value="pt">Português</option>
-      <option value="zh">中文</option>
-      <option value="ja">日本語</option>
-      <option value="ko">한국어</option>
-      <option value="hi">हिन्दी</option>
-      <option value="ru">Русский</option>
-      <option value="ar">العربية</option>
-      <option value="zu">isiZulu</option>
+    <select id="languageSelector" class="language-selector">
+      <option value="en">English</option><option value="es">Español</option><option value="fr">Français</option>
+      <option value="sw">Swahili</option><option value="de">Deutsch</option><option value="it">Italiano</option>
+      <option value="pt">Português</option><option value="zh">中文</option><option value="ja">日本語</option>
+      <option value="ko">한국어</option><option value="hi">हिन्दी</option><option value="ru">Русский</option>
+      <option value="ar">العربية</option><option value="zu">isiZulu</option>
     </select>
-    <span class="navbar-disclaimer" data-i18n="chat_disclaimer">Chat replies in your selected language.</span>
   </div>
 </nav>
 
-<div class="container">
+<!-- Layout -->
+<div class="wrapper">
   <!-- Sidebar -->
-  <aside class="sidebar">
-    <h2 data-i18n="sessions">Sessions</h2>
-    <select id="modeSelector" aria-label="Mode">
-      <option value="normal" data-i18n="mode_normal">Normal Mode</option>
-      <option value="incognito" data-i18n="mode_incognito">Incognito Mode</option>
-    </select>
-    <ul id="sessionList"></ul>
-    <button id="newSessionBtn" data-i18n="new_session">+ New Session</button>
+  <aside class="sidebar" id="sidebar">
+    <!-- Navigation links -->
+    <nav class="sidebar-nav">
+      <a href="/dashboard" class="nav-item" data-i18n="nav_home">Home</a>
+      <a href="/chat_page" class="nav-item active" data-i18n="nav_chat">Chat</a>
+      <a href="/call_page" class="nav-item" data-i18n="nav_call">Call</a>
+    </nav>
+
+    <hr style="border: 0; border-top: 1px solid rgba(0,255,159,0.2); margin: 10px 0;">
+
+    <!-- Chat sessions -->
+    <h2 data-i18n="chat_sessions">Chat Sessions</h2>
+    <ul id="sessionList" class="session-list"></ul>
+    <button id="newSessionBtn" type="button" class="new-session-btn" data-i18n="new_session">+ New Session</button>
   </aside>
 
-  <!-- Chat Interface -->
-  <main class="chat-container">
-    <div id="incognitoBanner" class="banner" style="display:none;" data-i18n="incognito_banner">
-      🔒 You are in Incognito Mode. This session will not be saved.
+  <!-- Main chat -->
+  <main class="main">
+    <div class="header">
+      <h1 data-i18n="chat_mode">Chat Mode</h1>
     </div>
-    <div id="chatBox" class="chat-box">
-      <div class="welcome-message" id="welcomeMessage">
-        <span data-i18n="chat_ready">Your personal chat is ready.</span><br>
-        <span data-i18n="chat_start">Start the conversation when you're ready.</span>
-      </div>
+
+    <div id="chatBox" class="transcript">
+      <p class="transcript-placeholder" data-i18n="chat_transcript_placeholder">
+        Messages will appear here once the session begins.
+      </p>
     </div>
-    <div class="chat-input">
-      <textarea id="messageInput" data-i18n-placeholder="chat_placeholder" placeholder="Type your message..." disabled></textarea>
-      <button id="sendBtn" disabled data-i18n="send_btn">Send</button>
+
+    <div class="input-row">
+      <textarea id="messageInput"
+                data-i18n-placeholder="chat_placeholder"
+                placeholder="Type your message..."></textarea>
+      <button id="sendBtn" data-i18n="send_btn">Send</button>
     </div>
   </main>
 </div>
 
-<!-- Scripts -->
+<!-- Overlay -->
+<div class="overlay" id="overlay"></div>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const menuBtn = document.getElementById("menuBtn");
-  const navLinks = document.getElementById("navLinks");
+const menuBtn = document.getElementById("menuBtn");
+const sidebar = document.getElementById("sidebar");
+const overlay = document.getElementById("overlay");
 
-  // Toggle menu
-  menuBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    navLinks.classList.toggle("show");
-  });
-
-  // Close menu when clicking outside
-  document.addEventListener("click", (e) => {
-    if (navLinks.classList.contains("show") && !navLinks.contains(e.target) && e.target !== menuBtn) {
-      navLinks.classList.remove("show");
-    }
-  });
-
-  // Close menu after clicking a link
-  navLinks.querySelectorAll("a").forEach(link => {
-    link.addEventListener("click", () => navLinks.classList.remove("show"));
-  });
+// Toggle sidebar + overlay
+menuBtn.addEventListener("click", () => {
+  sidebar.classList.toggle("show");
+  overlay.classList.toggle("show");
 });
+
+// Close sidebar when clicking overlay
+overlay.addEventListener("click", () => {
+  sidebar.classList.remove("show");
+  overlay.classList.remove("show");
+});
+
+
+  // Language selector
+  const languageSelector = document.getElementById('languageSelector');
+  const savedLang = localStorage.getItem('selectedLanguage') || '{{ lang|default("en") }}';
+  languageSelector.value = savedLang;
+
+  async function loadLanguage(lang) {
+    try {
+      const res = await fetch(`/static/lang/${lang}.json`);
+      if (!res.ok) throw new Error("Could not load translations");
+      const dict = await res.json();
+
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (dict[key]) el.textContent = dict[key];
+      });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (dict[key]) el.setAttribute("placeholder", dict[key]);
+      });
+
+      document.body.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+      localStorage.setItem('selectedLanguage', lang);
+    } catch (err) {
+      console.error("Error loading language:", err);
+    }
+  }
+
+  languageSelector.addEventListener('change', function () {
+    loadLanguage(this.value);
+  });
+
+  loadLanguage(savedLang);
 </script>
 
-<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+<script>
+// ===== Elements =====
+const sessionList = document.getElementById("sessionList");
+const newSessionBtn = document.getElementById("newSessionBtn");
+const chatBox = document.getElementById("chatBox");
+const messageInput = document.getElementById("messageInput");
+const sendBtn = document.getElementById("sendBtn");
+
+let sessions = [];
+let activeSession = null;
+
+/* ---------- Load Sessions from DB ---------- */
+async function loadSessions() {
+  try {
+    const res = await fetch("/sessions/chat");   // 🔹 only chat sessions
+    const data = await res.json();
+    if (data.success) {
+      sessions = data.sessions;
+      sessionList.innerHTML = "";
+      sessions.forEach(s => renderSession(s));
+
+      // ✅ Check for last active session in localStorage
+      const lastActiveId = localStorage.getItem("activeSessionId");
+      if (lastActiveId && sessions.find(s => s.session_id === lastActiveId)) {
+        loadSession(lastActiveId); // Restore last session
+      } else if (sessions.length > 0) {
+        const last = sessions[sessions.length - 1];
+        loadSession(last.session_id);
+        localStorage.setItem("activeSessionId", last.session_id);
+      } else {
+        activeSession = null;
+        chatBox.innerHTML = `<p class="transcript-placeholder">Please create a new session to begin.</p>`;
+        localStorage.removeItem("activeSessionId");
+      }
+    }
+  } catch (err) {
+    console.error("Error loading sessions:", err);
+  }
+}
+
+
+
+/* ---------- Save Session to DB ---------- */
+async function saveSession(session) {
+  try {
+    await fetch("/sessions/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include", // 🔹 keep consistent with call
+      body: JSON.stringify({
+        session_id: session.session_id,
+        name: session.name || "Session",
+        messages: session.messages || [],
+        kind: "chat"  // 🔹 force chat kind
+      }),
+    });
+  } catch (err) {
+    console.error("Error saving session:", err);
+  }
+}
+
+/* ---------- Delete Session ---------- */
+async function deleteSession(sessionId) {
+  if (!confirm("Delete this session?")) return;
+
+  try {
+    await fetch("/sessions/delete", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: sessionId }),
+    });
+
+    // 🔹 Remove locally
+    sessions = sessions.filter(s => s.session_id !== sessionId);
+    document.querySelector(`[data-id="${sessionId}"]`)?.remove();
+
+    // 🔹 Reset active if needed
+    if (activeSession?.session_id === sessionId) {
+      activeSession = null;
+      chatBox.innerHTML = `<p class="transcript-placeholder">
+        Please create a new session to begin.
+      </p>`;
+      localStorage.removeItem("activeSessionId");
+    }
+
+    // 🔹 Notify dashboard to refresh recents if open
+    if (window.opener && !window.opener.closed) {
+      try {
+        window.opener.postMessage({ type: "refreshSessions" }, "*");
+      } catch (_) {
+        console.warn("Could not notify dashboard to refresh sessions");
+      }
+    }
+
+  } catch (err) {
+    console.error("Error deleting session:", err);
+  }
+}
+
+
+
+/* ---------- Create Session ---------- */
+function createSession() {
+  const sessionId = `session-${Date.now()}`;
+  const session = {
+    session_id: sessionId,
+    name: `Session ${sessions.length + 1}`,
+    messages: [],
+    kind: "chat",
+  };
+  sessions.push(session);
+  renderSession(session);
+  loadSession(sessionId);
+  saveSession(session);
+}
+
+/* ---------- Render Sidebar Item ---------- */
+function renderSession(session) {
+  if (document.querySelector(`[data-id="${session.session_id}"]`)) return;
+
+  const li = document.createElement("li");
+  li.className = "session-item";
+  li.dataset.id = session.session_id;
+
+  li.innerHTML = `
+    <span class="session-title">${session.name}</span>
+    <div class="session-actions">
+      <button class="menu-btn">⋮</button>
+      <div class="menu-dropdown hidden">
+        <button class="rename-btn">Rename</button>
+        <button class="delete-btn">Delete</button>
+      </div>
+    </div>
+  `;
+
+  // Load session
+  li.querySelector(".session-title").addEventListener("click", () => loadSession(session.session_id));
+
+  // Dropdown toggle
+  const menuBtn = li.querySelector(".menu-btn");
+  const dropdown = li.querySelector(".menu-dropdown");
+  menuBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    document.querySelectorAll(".menu-dropdown").forEach(d => d.classList.add("hidden"));
+    dropdown.classList.toggle("hidden");
+  });
+
+  // Rename
+  li.querySelector(".rename-btn").addEventListener("click", () => renameSession(session.session_id));
+
+  // Delete
+  li.querySelector(".delete-btn").addEventListener("click", () => deleteSession(session.session_id));
+
+  sessionList.appendChild(li);
+}
+
+// Hide menus when clicking outside
+document.addEventListener("click", () => {
+  document.querySelectorAll(".menu-dropdown").forEach(d => d.classList.add("hidden"));
+});
+
+/* ---------- Load Session ---------- */
+function loadSession(sessionId) {
+  activeSession = sessions.find(s => s.session_id === sessionId);
+  if (!activeSession) return;
+
+  // 🔹 Remember last active session
+  localStorage.setItem("activeSessionId", sessionId);
+
+  // Highlight in sidebar
+  document.querySelectorAll(".session-item").forEach(item => item.classList.remove("active"));
+  const activeLi = document.querySelector(`[data-id="${sessionId}"]`);
+  if (activeLi) activeLi.classList.add("active");
+
+  // Render messages
+  chatBox.innerHTML = "";
+  if (activeSession.messages.length === 0) {
+    chatBox.innerHTML = `<p class="transcript-placeholder">Messages will appear here once the session begins.</p>`;
+  } else {
+    activeSession.messages.forEach(msg => {
+      const div = document.createElement("div");
+      div.className = `msg ${msg.sender}`;
+      div.textContent = msg.text;
+      chatBox.appendChild(div);
+    });
+  }
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+
+/* ---------- Messaging ---------- */
+/* ---------- Messaging ---------- */
+async function sendMessage() {
+  if (!activeSession) {
+    alert("Please create a session first.");
+    return;
+  }
+
+  const text = messageInput.value.trim();
+  if (!text) return;
+
+   // 🔹 Remove placeholder if it exists
+  const placeholder = chatBox.querySelector(".transcript-placeholder");
+  if (placeholder) placeholder.remove();
+  
+
+  // Add user message
+  activeSession.messages.push({ sender: "user", text });
+
+  const div = document.createElement("div");
+  div.className = "msg user";
+  div.textContent = text;
+  chatBox.appendChild(div);
+
+  messageInput.value = "";
+  chatBox.scrollTop = chatBox.scrollHeight;
+
+  // Auto-rename session with backend help
+  if (activeSession.messages.length === 1) {
+    try {
+      const res = await fetch("/chat/rename_session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, language: "en" }),
+      });
+      const data = await res.json();
+      activeSession.name = data.name || "New Session";
+      document.querySelector(`[data-id="${activeSession.session_id}"] .session-title`).textContent = activeSession.name;
+    } catch (err) {
+      console.error("Auto-rename failed:", err);
+    }
+  }
+
+  // ==== Therapist Reply (realistic via backend) ====
+  try {
+    const res = await fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: "frontend-user", // you can replace with current_user.id if injected
+        session_id: activeSession.session_id,
+        message: text,
+        language: "en", // pass UI language if you want multilingual
+      }),
+    });
+    const data = await res.json();
+
+    const reply = { sender: "therapist", text: data.reply };
+    activeSession.messages.push(reply);
+
+    const replyDiv = document.createElement("div");
+    replyDiv.className = "msg therapist";
+    replyDiv.textContent = reply.text;
+    chatBox.appendChild(replyDiv);
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+    saveSession(activeSession); // persist updated messages
+  } catch (err) {
+    console.error("Therapist reply error:", err);
+    const errorDiv = document.createElement("div");
+    errorDiv.className = "msg therapist";
+    errorDiv.textContent = "⚠️ Sorry, something went wrong with the therapist reply.";
+    chatBox.appendChild(errorDiv);
+  }
+}
+
+
+/* ---------- Utilities ---------- */
+function renameSession(sessionId) {
+  const session = sessions.find(s => s.session_id === sessionId);
+  const newTitle = prompt("Enter a new name for this session:", session.name);
+  if (newTitle) {
+    session.name = newTitle;
+    const titleEl = document.querySelector(`[data-id="${sessionId}"] .session-title`);
+    if (titleEl) titleEl.textContent = newTitle;
+    saveSession(session);
+  }
+}
+
+/* ---------- Event Listeners ---------- */
+newSessionBtn.addEventListener("click", createSession);
+sendBtn.addEventListener("click", sendMessage);
+messageInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+
+// Load all sessions from DB when page starts
+window.addEventListener("DOMContentLoaded", async () => {
+  // 1. Load DB sessions
+  await loadSessions();
+
+  // 2. Check if dashboard passed a sid
+  const params = new URLSearchParams(window.location.search);
+  const sid = params.get("sid");
+
+  if (sid) {
+    const target = sessions.find(s => s.session_id === sid);
+    if (target) {
+      loadSession(sid);
+      localStorage.setItem("activeSessionId", sid);
+      return;
+    }
+  }
+
+  // 3. Otherwise fallback to last active session
+  const lastActiveId = localStorage.getItem("activeSessionId");
+  if (lastActiveId && sessions.find(s => s.session_id === lastActiveId)) {
+    loadSession(lastActiveId);
+  }
+});
+
+
+
+</script>
+
 <script src="{{ url_for('static', filename='chat.js') }}"></script>
+
 </body>
 </html>

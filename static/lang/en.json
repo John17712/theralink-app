@@ -8,11 +8,14 @@
   "call_title": "Call Mode",
   "call_sessions": "Call Sessions",
   "new_session": "+ New Session",
-  "new_call_session": "+ New Trial Call",
+  "new_call_session": "+ New Call",
+  "new_trial_call_session": "+ New Trial Call",
   "call_mode": "Call Mode",
   "voice_label": "Voice:",
   "voice_female": "Female",
   "voice_male": "Male",
+  "female": "Female",
+  "male": "Male",
   "start_call": "Start Call",
   "end_call": "End Call",
 
@@ -25,6 +28,20 @@
 
   "transcript_placeholder": "Transcript will appear here once the session begins.",
   "continue_btn": "Continue",
+  "your_turn": "Your turn to speak...",
+  "recording": "🎙️ Recording... Tap again to stop.",
+  "listening": "🎙️ Listening...",
+  "processing": "⏳ Processing...",
+  "sent_to_therapist": "✅ Sent to therapist",
+  "too_short": "⚠️ Too short, try again.",
+  "could_not_transcribe": "⚠️ Could not transcribe audio.",
+  "failed_to_process": "⚠️ Failed to process audio.",
+  "speech_not_supported": "⚠️ Speech recognition not supported. Please use Chrome or Edge.",
+  "speech_error": "⚠️ Speech recognition error. Try again.",
+  "mic_denied": "⚠️ Microphone access denied.",
+  "ios_listening": "🎙️ Listening... (iOS live)",
+  "ios_error": "⚠️ iOS microphone error.",
+  "therapist_error": "⚠️ Sorry, something went wrong with the therapist reply.",
 
   "chat_title": "AI Therapy Chat",
   "nav_home": "Home",
@@ -39,7 +56,6 @@
   "sessions": "Sessions",
   "mode_normal": "Normal Mode",
   "mode_incognito": "Incognito Mode",
-
   "incognito_banner": "You are in Incognito Mode. This session will not be saved.",
 
   "chat_ready": "Your personal chat is ready.",
@@ -51,6 +67,8 @@
   "start_prompt": "Please create a new session below to begin.",
   "delete_confirm": "Delete this session?",
   "rename_prompt": "Enter new session name:",
+  "rename": "Rename",
+  "delete": "Delete",
 
   "you": "You",
   "you_speaking": "You (speaking)",
@@ -106,20 +124,27 @@
 
   "login_title": "Login",
   "login_email": "Email",
+  "login_email_placeholder": "Enter your email",
   "login_password": "Password",
+  "login_password_placeholder": "Enter your password",
   "login_button": "Login",
   "forgot_password": "Forgot password?",
   "no_account": "Don’t have an account?",
   "signup_prompt": "Sign up",
+  "admin_login": "🔑 Admin Login",
 
   "signup_title": "Sign Up",
   "signup_email": "Email",
+  "signup_email_placeholder": "Enter your email",
   "signup_password": "Password",
+  "signup_password_placeholder": "Enter your password",
   "signup_password_hint": "Must be at least 6 characters and include at least one special character.",
   "signup_confirm_password": "Confirm Password",
+  "signup_confirm_password_placeholder": "Confirm your password",
   "signup_button": "Create account",
   "have_account": "Already have an account?",
   "login_prompt": "Login",
+  "password_policy_alert": "Password must be at least 6 characters and include at least one special character.",
 
   "reset_password_title": "Reset your password",
   "reset_password_email_label": "Registered Email",
@@ -135,13 +160,14 @@
   "confirm_password_button": "Reset Password",
 
   "back_to_login": "Back to Login",
+  "back_to_home": "Back to Home",
   "password_mismatch_alert": "Passwords do not match.",
 
   "trial_expired": "Your free trial has ended. Please sign up to continue.",
   "trial_expired_banner": "🚨 Your free trial has ended. <a href='/signup' style='color:#00ff9f; text-decoration:underline;'>Sign up</a> to continue.",
 
   "trial_call_limit_reached": "⚠️ Your free trial call sessions are over. Please sign up to continue.",
-  "call_limit_reached": "Trial limit reached.",
+  "trial_limit_reached": "⚠️ Your trial limit has been reached.",
   "call_session_expired": "⏰ Your trial call has ended. Please sign up to continue.",
   "signup_now": "Sign up now",
 
@@ -175,5 +201,9 @@
   "privacy_changes_title": "Changes to Policy",
   "privacy_changes_text": "We may update this Privacy Policy from time to time. You will be notified of significant changes, and continued use of the platform will indicate acceptance.",
   "privacy_contact_title": "Contact Us",
-  "privacy_contact_text": "For privacy-related questions, concerns, or requests, please contact us at support@theralink.com."
+  "privacy_contact_text": "For privacy-related questions, concerns, or requests, please contact us at support@theralink.com.",
+
+  "subscribe_title": "Subscribe to TheraLink",
+  "subscribe_text": "Unlock unlimited chat & call sessions for only",
+  "subscribe_button": "Subscribe Now"
 }
