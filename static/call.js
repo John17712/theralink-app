@@ -664,11 +664,17 @@ async function startRecording(auto = false) {
         const ext = isSafari ? "mp4" : "webm";
         const blob = new Blob(audioChunks, { type: `audio/${ext}` });
 
+        // ✅ Add debug log here
+        console.log("📱 iOS sending blob:", blob.size, blob.type);
+
         // ❌ Skip empty/too small blobs
-        if (blob.size < 2000) {
-          callStatus.innerText = "⚠️ Too short, try again.";
-          return;
-        }
+       // ✅ Only reject if truly empty
+          if (blob.size === 0) {
+            callStatus.innerText = "⚠️ Empty audio, try again.";
+            return;
+          }
+          console.log("📦 Uploading blob size:", blob.size, "type:", blob.type);
+
 
         const formData = new FormData();
         formData.append("audio", blob, `voice.${ext}`);

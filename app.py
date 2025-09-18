@@ -1243,8 +1243,8 @@ def transcribe():
                 elif "webm" in mime_type:
                     audio = AudioSegment.from_file(audio_file.stream, format="webm")
                 else:
-                    # Let pydub try to auto-detect
                     audio = AudioSegment.from_file(audio_file.stream)
+
 
                 audio.export(temp_path, format="m4a")
 
