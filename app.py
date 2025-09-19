@@ -31,9 +31,9 @@ from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from flask_mail import Message
 from libretranslatepy import LibreTranslateAPI
 import tempfile
-import whisper 
-from pydub import AudioSegment
-import imageio_ffmpeg
+#import whisper 
+#from pydub import AudioSegment
+#import imageio_ffmpeg
 
 
 #DEBUGGING
@@ -51,12 +51,12 @@ logging.basicConfig(
 )
 
 
-load_dotenv()
+#load_dotenv()
 # Path to your external .env file
-#env_path = r"C:\Users\Professsor\Desktop\therapyapp.env\.env"
+env_path = r"C:\Users\Professsor\Desktop\therapyapp.env\.env"
 
 # Load it
-#load_dotenv(env_path)
+load_dotenv(env_path)
 
 
 
@@ -75,19 +75,37 @@ load_dotenv()
 # OPENAI CLIENT (GROQ)
 # ========================================================================
 
-# Detect environment
-FLASK_ENV = os.getenv("FLASK_ENV", "production")
+logger = logging.getLogger(__name__)
 
-
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-
-
-# Load local Whisper only in development
-if FLASK_ENV == "development":
-    import whisper
-    whisper_model = whisper.load_model("base")   # use "base" locally
+# Load .env either from a local path (dev) or default .env in cwd
+CUSTOM_ENV = r"C:\Users\Professsor\Desktop\therapyapp.env\.env"
+if os.path.exists(CUSTOM_ENV):
+    load_dotenv(CUSTOM_ENV)
 else:
-    whisper_model = None
+    load_dotenv()
+
+# Robust "dev mode" detection (works with Flask 3)
+IS_DEV = (
+    os.getenv("FLASK_DEBUG", "0") in ("1", "true", "True")
+    or os.getenv("ENV", "").lower() in ("dev", "development", "local")
+    or os.getenv("PYTHON_ENV", "").lower() in ("dev", "development")
+)
+
+# Groq client
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+TRANSCRIBE_MODEL = os.getenv("GROQ_TRANSCRIBE_MODEL", "whisper-large-v3")
+
+# Dev-only Whisper (avoid importing in production)
+whisper_model = None
+if IS_DEV:
+    try:
+        import whisper  # heavy dependency → keep in dev only
+        whisper_model = whisper.load_model(os.getenv("WHISPER_MODEL", "base"))
+        logger.info("Loaded local Whisper model for DEV.")
+    except Exception as e:
+        logger.warning("Whisper not available in dev: %s", e)
+
+logger.info("App mode: %s", "DEV" if IS_DEV else "PROD")
 
 MODEL = "llama-3.3-70b-versatile"   # or "llama-3.1-70b-versatile" if you want stronger model
 user_sessions = {}
@@ -1246,41 +1264,52 @@ def transcribe():
         app.logger.info("🎤 /transcribe endpoint called")
 
         if "audio" not in request.files:
-            app.logger.error("❌ No audio in request.files")
+            app.logger.error("❌ No 'audio' part in request.files")
             return jsonify({"error": "No audio uploaded"}), 400
 
         audio_file = request.files["audio"]
-        clen = getattr(audio_file, "content_length", None)
-        app.logger.info(f"📥 Received file: {audio_file.filename}, type={audio_file.mimetype}, content_length={clen}")
+        mimetype = (audio_file.mimetype or "").lower()
+        filename = audio_file.filename or "audio"
 
-        # ⚠️ Do NOT early-return on content_length; iOS/Safari often reports 0/None.
-        file_ext = os.path.splitext(audio_file.filename or "")[1].lower() or ".wav"
+        # Derive file extension
+        ext = os.path.splitext(filename)[1].lower()
+        if not ext:
+            if "wav" in mimetype:
+                ext = ".wav"
+            elif "mp4" in mimetype or "m4a" in mimetype:
+                ext = ".mp4"
+            elif "aac" in mimetype:
+                ext = ".aac"
+            elif "webm" in mimetype:
+                ext = ".webm"
+            else:
+                ext = ".wav"  # default
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as tmp:
+        # Save upload to a temp file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
             temp_path = tmp.name
             try:
-                # make sure stream is at start
                 audio_file.stream.seek(0)
             except Exception:
                 pass
             audio_file.save(temp_path)
 
         file_size = os.path.getsize(temp_path)
-        app.logger.info(f"📦 Saved audio file: {temp_path}, size={file_size} bytes")
+        app.logger.info(f"📦 Saved audio file: {temp_path}, size={file_size} bytes, type={mimetype}")
 
-        # Treat tiny files as empty/corrupt (some proxies return a tiny body)
+        # Treat tiny files as empty/corrupt
         if file_size < 1024:
-            os.remove(temp_path)
-            app.logger.error("❌ Saved file is too small / empty")
+            try: os.remove(temp_path)
+            except Exception: pass
+            app.logger.error("❌ Saved file too small / empty")
             return jsonify({"error": "Empty audio file"}), 400
 
-        # Optional: normalize to WAV/16k mono if not already WAV
+        # Convert to wav/16k mono if needed
         try:
-            ext = file_ext.lstrip(".")
-            if ext != "wav":
+            if not temp_path.endswith(".wav"):
                 from pydub import AudioSegment
                 import imageio_ffmpeg
-                # make pydub use bundled ffmpeg if available
+
                 try:
                     AudioSegment.converter = imageio_ffmpeg.get_ffmpeg_exe()
                 except Exception:
@@ -1293,33 +1322,30 @@ def transcribe():
                     .export(wav_path, format="wav")
                 os.remove(temp_path)
                 temp_path = wav_path
-                file_ext = ".wav"
-                app.logger.info("🔄 Converted to WAV/16k mono for transcription")
+                app.logger.info("🔄 Converted to WAV/16k mono")
         except Exception as conv_err:
             app.logger.warning(f"⚠️ Could not convert to WAV: {conv_err}")
 
         # Transcribe
         text = ""
         try:
-            if os.getenv("FLASK_ENV") == "development" and whisper_model:
+            if IS_DEV and whisper_model:
                 result = whisper_model.transcribe(temp_path)
                 text = (result.get("text") or "").strip()
             else:
+                # 👉 Groq API: DO NOT pass unsupported kwargs like file_type
                 with open(temp_path, "rb") as f:
                     transcript = client.audio.transcriptions.create(
-                        model="whisper-large-v3",
-                        file=f,
-                        file_type="wav" if file_ext == ".wav" else None
+                        model=TRANSCRIBE_MODEL,
+                        file=f
                     )
-                text = (transcript.text or "").strip()
+                text = (getattr(transcript, "text", "") or "").strip()
         except Exception as transcribe_error:
             app.logger.error(f"❌ Transcription failed: {transcribe_error}")
 
         # Cleanup
-        try:
-            os.remove(temp_path)
-        except Exception:
-            pass
+        try: os.remove(temp_path)
+        except Exception: pass
 
         app.logger.info(f"✅ Transcription result: '{text}'")
         return jsonify({"text": text})
@@ -1327,6 +1353,7 @@ def transcribe():
     except Exception as e:
         app.logger.exception("Transcription error")
         return jsonify({"error": str(e)}), 500
+
 
 
 @app.route("/trial_transcribe", methods=["POST"])
@@ -1340,10 +1367,7 @@ def trial_transcribe():
         size = getattr(audio_file, "content_length", None) or 0
         app.logger.info(f"📡 Upload: mimetype={mimetype}, size={size}")
 
-        if size == 0:
-            return jsonify({"text": ""})
-
-        # 🔹 Pick extension based on mimetype
+        # Save to tmp with best-guess extension
         ext = ".webm"
         if "mp4" in mimetype or "m4a" in mimetype:
             ext = ".mp4"
@@ -1357,63 +1381,76 @@ def trial_transcribe():
             audio_file.save(temp_path)
 
         file_size = os.path.getsize(temp_path)
-        if file_size < 2000:  # ~2KB safeguard
+        if file_size < 2000:
             app.logger.warning(f"⚠️ File too small ({file_size} bytes), skipping transcription")
             os.remove(temp_path)
-            return jsonify({"text": ""})
+            return jsonify({"error": "Empty audio file"}), 400
 
         app.logger.info(f"🎙️ Transcribing file: {temp_path}, size={file_size} bytes")
 
-        # 🔹 Send to Whisper
+        # Optional WAV normalize (same as above)
+        try:
+            if ext != ".wav":
+                from pydub import AudioSegment
+                import imageio_ffmpeg
+                try:
+                    AudioSegment.converter = imageio_ffmpeg.get_ffmpeg_exe()
+                except Exception:
+                    pass
+                wav_path = temp_path + ".wav"
+                AudioSegment.from_file(temp_path)\
+                    .set_frame_rate(16000)\
+                    .set_channels(1)\
+                    .export(wav_path, format="wav")
+                os.remove(temp_path)
+                temp_path = wav_path
+        except Exception as conv_err:
+            app.logger.warning(f"⚠️ Could not convert to WAV: {conv_err}")
+
         with open(temp_path, "rb") as f:
             transcript = client.audio.transcriptions.create(
-                model="whisper-1",
-                file=f
+                model="whisper-large-v3",
+                file=f,
             )
-        transcription = (transcript.text or "").strip()
+        text = (getattr(transcript, "text", "") or "").strip()
 
-        app.logger.info(f"✅ Transcription result: '{transcription}'")
+        os.remove(temp_path)
 
-        # Clean up
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+        if not text:
+            return jsonify({"error": "No speech detected"}), 422
 
-        return jsonify({"text": transcription})
+        return jsonify({"text": text})
 
     except Exception as e:
-        app.logger.exception(f"Trial transcription error: {str(e)}")
+        app.logger.exception("Trial transcription error")
         return jsonify({"error": "Transcription failed"}), 500
 
 @app.route("/debug_transcribe", methods=["POST"])
 def debug_transcribe():
-    """Simple endpoint to test if transcription works"""
     try:
         if "audio" not in request.files:
             return jsonify({"error": "No audio file"}), 400
 
         audio_file = request.files["audio"]
-
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
             audio_file.save(tmp.name)
 
-            with open(tmp.name, "rb") as f:
-                transcript = client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=f
-                )
-            transcription = (transcript.text or "").strip()
+        with open(tmp.name, "rb") as f:
+            transcript = client.audio.transcriptions.create(
+                model="whisper-large-v3",
+                file=f
+            )
+        text = (getattr(transcript, "text", "") or "").strip()
+        os.remove(tmp.name)
 
-            os.remove(tmp.name)
+        if not text:
+            return jsonify({"error": "No speech detected"}), 422
 
-            return jsonify({
-                "success": True,
-                "text": transcription,
-                "length": len(transcription)
-            })
+        return jsonify({"success": True, "text": text, "length": len(text)})
 
     except Exception as e:
         app.logger.exception("Debug transcription error")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Transcription failed"}), 500
 
 # ======Upload_audio======
 @app.route("/call/upload_audio", methods=["POST"])
@@ -1422,20 +1459,28 @@ def upload_audio():
         audio_file = request.files["audio"]
         session_id = request.form.get("session_id")
 
-        # Save temporary
-        path = os.path.join("uploads", audio_file.filename)
-        audio_file.save(path)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+            path = tmp.name
+            audio_file.save(path)
 
-        # Transcribe with Whisper (or any STT model)
-        transcript = client.audio.transcriptions.create(
-            model="whisper-1",
-            file=open(path, "rb")
-        )
+        with open(path, "rb") as f:
+            transcript = client.audio.transcriptions.create(
+                model="whisper-large-v3",
+                file=f
+            )
+        text = (getattr(transcript, "text", "") or "").strip()
 
-        return jsonify({"text": transcript.text})
+        os.remove(path)
+
+        if not text:
+            return jsonify({"error": "No speech detected"}), 422
+
+        return jsonify({"text": text})
+
     except Exception as e:
         app.logger.exception("Audio upload error")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Transcription failed"}), 500
+
 
 # ========================================================================
 # SESSIONS (INCL. TRIAL) + SAVE/DELETE
