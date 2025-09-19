@@ -13,6 +13,7 @@ const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 
 let recognizing = false;
+let iosMicUnlocked = false;
 let recognition;
 let selectedVoice = null;
 let voiceGender = localStorage.getItem("therapistVoice") || "female";
@@ -22,7 +23,10 @@ let isTherapistSpeaking = false;
 let fullTranscript = "";
 let titleGenerated = false;
 let translations = {};
-let ttsWarnedOnce = false;
+
+let audioProcessor = null;
+let mediaStream = null;
+
 
 // 🔹 Calls always in English for speech + model
 const CALL_LANG_CODE = "en-US";
@@ -228,10 +232,14 @@ utter.onend = () => {
     if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
       onTherapistFinished();   // auto-start mic for iOS
     } 
-    // 💻 Desktop (Mac/Windows) → use webkitSpeechRecognition
+    // 💻 Desktop/Android: prefer Web Speech, else fall back to MediaRecorder
     else {
+      if ("webkitSpeechRecognition" in window) {
       startListening();
+    } else {
+      startRecording(true);
     }
+  }
   }, 200); // small delay avoids conflicts with speechSynthesis.cancel
 };
 
@@ -569,13 +577,44 @@ window.onload = async () => {
   }
 };
 
+// 🔓 One-time iOS mic unlock helper
+async function unlockIOSMicOnce() {
+  try {
+    // If already unlocked and the stream is still live, reuse it
+    if (
+      iosMicUnlocked &&
+      mediaStream &&
+      mediaStream.getAudioTracks().some(t => t.readyState === "live")
+    ) {
+      return mediaStream;
+    }
+
+    // 1) Ask for mic (don’t force sampleRate; Safari may ignore it anyway)
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        channelCount: 1,
+        echoCancellation: true,
+        noiseSuppression: true
+      }
+    });
+
+    iosMicUnlocked = true; // ✅ mark as unlocked
+    return mediaStream;
+
+  } catch (err) {
+    iosMicUnlocked = false;
+    console.error("❌ iOS mic unlock failed:", err);
+    if (typeof callStatus !== "undefined" && callStatus) {
+      callStatus.innerText = "⚠️ Microphone access blocked or unavailable.";
+    }
+    throw err;
+  }
+}
 
 
-startCallBtn.onclick = startCall;
-
-// 🔓 Mobile audio/mic unlock on first tap
-startCallBtn.addEventListener("click", () => {
-  // Unlock audio
+// 🔘 Start Call — single consolidated click handler
+startCallBtn.addEventListener("click", async () => {
+  // 1) Unlock Web Speech (TTS) on first user gesture
   try {
     const unlockUtter = new SpeechSynthesisUtterance(" ");
     speechSynthesis.speak(unlockUtter);
@@ -583,46 +622,87 @@ startCallBtn.addEventListener("click", () => {
     console.warn("Audio unlock failed:", e);
   }
 
-  // Unlock mic (Android only, iOS Safari doesn’t support webkitSpeechRecognition)
-  if ("webkitSpeechRecognition" in window && !/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+  // 2) Unlock microphone
+  try {
+    if (isIOS && !iosMicUnlocked) {
+      // Prefer the helper if your code defines it elsewhere
+      if (typeof unlockIOSMicOnce === "function") {
+        await unlockIOSMicOnce();
+      } else {
+        // Fallback: request mic once and mark unlocked
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true }
+        });
+        iosMicUnlocked = true;
+      }
+    } else if ("webkitSpeechRecognition" in window && !isIOS) {
+      // Desktop Chrome/Edge: quick start/stop to grant mic permission
+      try {
+        const dummy = new webkitSpeechRecognition();
+        dummy.start();
+        setTimeout(() => dummy.stop(), 50);
+      } catch (e) {
+        console.warn("Mic unlock (desktop) failed:", e);
+      }
+    }
+  } catch (e) {
+    console.warn("Mic unlock attempt failed:", e);
+  }
+
+  // 3) Preload the turn ding to avoid autoplay blocking later
+  try {
+    const ding = new Audio("/static/sounds/turn.mp3");
+    ding.play().then(() => ding.pause()).catch(() => {});
+  } catch (_) {}
+
+  // 4) Actually start the call
+  startCall();
+});
+
+// 🛑 End Call
+endCallBtn.addEventListener("click", endCall);
+
+// 🆕 New Call Session
+newCallSessionBtn.addEventListener("click", addNewCallSession);
+
+// ▶️ Continue listening (after long silence)
+continueBtn.addEventListener("click", async () => {
+  continueBtn.style.display = "none";
+  hideUserTurn();
+
+  if (isIOS) {
     try {
-      let dummy = new webkitSpeechRecognition();
-      dummy.start();
-      setTimeout(() => dummy.stop(), 50);
+      await startIOSRecording();
     } catch (e) {
-      console.warn("Mic unlock failed:", e);
+      console.warn("iOS continue failed:", e);
+      callStatus.innerText = "⚠️ Microphone access blocked or unavailable.";
+    }
+  } else {
+    // Desktop/Android
+    if ("webkitSpeechRecognition" in window) {
+      startListening();
+    } else {
+      // Fallback to MediaRecorder path
+      startRecording(true);
     }
   }
 });
 
 
-startCallBtn.addEventListener("click", () => {
-  // Preload ding sound to avoid autoplay block
-  const audio = new Audio("/static/sounds/turn.mp3");
-  audio.play().then(() => audio.pause()).catch(() => {});
-});
-
-endCallBtn.onclick = endCall;
-newCallSessionBtn.onclick = addNewCallSession;
-
-continueBtn.onclick = () => {
-  continueBtn.style.display = "none";
-  hideUserTurn();
-  startListening();
-};
-
-
-(function useSidFromDashboard(){
-  const sid = localStorage.getItem('openDbCallSid');
+// 🔁 If a dashboard opened this page with a specific session id, load it
+(function useSidFromDashboard() {
+  const sid = localStorage.getItem("openDbCallSid");
   if (!sid) return;
-  localStorage.removeItem('openDbCallSid');
+  localStorage.removeItem("openDbCallSid");
 
-  if (typeof window.selectCallSessionById === 'function') {
+  if (typeof window.selectCallSessionById === "function") {
     window.selectCallSessionById(sid);
   } else {
     window.currentCallSessionId = sid;
   }
 })();
+
+
 
 // ---------------- 🎤 Mic Button (iOS + Desktop) ----------------
 const micBtn = document.getElementById("micBtn");
@@ -640,97 +720,115 @@ function setMicBlinking(active) {
 }
 
 // ✅ Start recording (manual or auto)
+// ✅ Start recording (manual or auto) — fixed MIME/ext + safe cleanup
 async function startRecording(auto = false) {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-    // Safari needs mp4, Chrome/Edge use webm
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    const mimeType = isSafari ? "audio/mp4" : "audio/webm";
+    // Capability probe for best available container/codec
+    const candidates = [
+      "audio/webm;codecs=opus",
+      "audio/webm",
+      "audio/mp4",  // Safari
+      "audio/aac"   // Safari fallback
+    ];
+    const mimeType = (MediaRecorder.isTypeSupported)
+      ? (candidates.find(t => MediaRecorder.isTypeSupported(t)) || "")
+      : "";
 
-    mediaRecorder = new MediaRecorder(stream, { mimeType });
+    mediaRecorder = mimeType
+      ? new MediaRecorder(stream, { mimeType })
+      : new MediaRecorder(stream); // let the browser decide
+
     audioChunks = [];
 
-    mediaRecorder.ondataavailable = e => {
-      if (e.data.size > 0) audioChunks.push(e.data);
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) audioChunks.push(e.data);
     };
 
     mediaRecorder.onstop = async () => {
       setMicBlinking(false);
       clearTimeout(silenceTimer);
 
-      // Small delay so Safari flushes last chunk
-      setTimeout(async () => {
-        const ext = isSafari ? "mp4" : "webm";
-        const blob = new Blob(audioChunks, { type: `audio/${ext}` });
+      // Prefer the actual type the recorder produced
+      const producedType =
+        mediaRecorder.mimeType ||
+        (audioChunks[0] && audioChunks[0].type) ||
+        "audio/webm";
 
-        // ✅ Add debug log here
-        console.log("📱 iOS sending blob:", blob.size, blob.type);
+      // Pick a sensible file extension from the MIME
+      const ext = producedType.includes("mp4")
+        ? "mp4"
+        : producedType.includes("aac")
+        ? "aac"
+        : "webm";
 
-        // ❌ Skip empty/too small blobs
-       // ✅ Only reject if truly empty
-          if (blob.size === 0) {
-            callStatus.innerText = "⚠️ Empty audio, try again.";
-            return;
-          }
-          console.log("📦 Uploading blob size:", blob.size, "type:", blob.type);
+      // Build a single blob with the *real* type
+      const blob = new Blob(audioChunks, { type: producedType });
 
+      // 🔎 Debug info before upload
+      console.log("🎙️ MediaRecorder blob:", {
+        size: blob.size,
+        type: blob.type,
+        mimeType: mediaRecorder.mimeType
+      });
 
-        const formData = new FormData();
-        formData.append("audio", blob, `voice.${ext}`);
+      // Always stop tracks to release the mic
+      try { stream.getTracks().forEach(t => t.stop()); } catch (_) {}
 
-        try {
-          const res = await fetch("/transcribe", { method: "POST", body: formData });
-          const data = await res.json();
+      if (blob.size === 0) {
+        callStatus.innerText = "⚠️ Empty audio, try again.";
+        console.warn("❌ Skipping empty blob upload");
+        return;
+      }
 
-          if (data.text) {
-            // Show transcript
-            const div = document.createElement("div");
-            div.className = "msg user";
-            div.innerHTML = `<strong>${translations["you"] || "You"}:</strong> ${data.text}`;
-            transcriptBox.appendChild(div);
-            transcriptBox.scrollTop = transcriptBox.scrollHeight;
+      const formData = new FormData();
+      formData.append("audio", blob, `voice.${ext}`);
 
-            // Send to therapist
-            sendToTherapist(data.text);
-            callStatus.innerText = "✅ Sent to therapist";
-          } else {
-            callStatus.innerText = "⚠️ Could not transcribe audio.";
-          }
-        } catch (err) {
-          console.error("Transcription error:", err);
-          callStatus.innerText = "⚠️ Failed to process audio.";
+      try {
+        console.log("📡 Uploading blob → /transcribe");
+        const res = await fetch("/transcribe", { method: "POST", body: formData });
+        console.log("📡 Server response status:", res.status);
+        const data = await res.json();
+        console.log("📜 Server response JSON:", data);
+
+        if (data.text) {
+          const div = document.createElement("div");
+          div.className = "msg user";
+          div.innerHTML = `<strong>${translations["you"] || "You"}:</strong> ${data.text}`;
+          transcriptBox.appendChild(div);
+          transcriptBox.scrollTop = transcriptBox.scrollHeight;
+
+          sendToTherapist(data.text);
+          callStatus.innerText = "✅ Sent to therapist";
+        } else {
+          callStatus.innerText = "⚠️ Could not transcribe audio.";
         }
-      }, 250);
+      } catch (err) {
+        console.error("❌ Transcription error:", err);
+        callStatus.innerText = "⚠️ Failed to process audio.";
+      }
     };
 
-    mediaRecorder.start();
+    mediaRecorder.start(250); // request chunks every 250ms
+ // you can pass a timeslice if you want periodic chunks
     isRecording = true;
 
     if (auto) {
       setMicBlinking(true);
       callStatus.innerText = "🎙️ Listening...";
-      resetSilenceTimer();
+      resetSilenceTimer();        // this remains a fixed 6s window
     } else {
       callStatus.innerText = "🎙️ Recording... Tap again to stop.";
       micBtn.textContent = "⏹ Stop Talking";
     }
-
   } catch (err) {
     console.error("Mic error:", err);
     callStatus.innerText = "⚠️ Microphone access denied.";
   }
 }
 
-// ✅ Stop recording
-function stopRecording() {
-  if (mediaRecorder && mediaRecorder.state === "recording") {
-    mediaRecorder.stop();
-    isRecording = false;
-    micBtn.textContent = "🎤 Start Talking";
-    callStatus.innerText = "⏳ Processing...";
-  }
-}
+
 
 // ✅ Silence detection (auto stop after 6s pause)
 function resetSilenceTimer() {
@@ -741,177 +839,276 @@ function resetSilenceTimer() {
   }, 6000);
 }
 
-// ✅ Manual toggle (still works for desktop)
+// ✅ Update mic button handler for iOS
 micBtn.onclick = () => {
-  if (!isRecording) {
-    startRecording(false);
+  if (isIOS) {
+    if (!isRecording) {
+      startIOSRecording();
+    } else {
+      stopIOSRecording();
+    }
   } else {
-    stopRecording();
+    // Desktop handling (your existing code)
+    if (!isRecording) {
+      startRecording(false);
+    } else {
+      stopRecording();
+    }
   }
 };
+
 
 // ✅ Hook: Therapist finished → auto start mic
 function onTherapistFinished() {
-  if (!isRecording) {
-    startRecording(true); // auto mode
+  if (isRecording) return;
+
+  if (isIOS) {
+    if (iosMicUnlocked) {
+      // We already have mic permission from a user gesture → auto-start
+      startIOSRecording();
+    } else {
+      // No prior user gesture → prompt the user
+      continueBtn.style.display = "inline-block";
+      showUserTurn();
+      playTurnSound();
+    }
+  } else {
+    // Desktop/Android path with Web Speech / MediaRecorder
+    startRecording(true);
   }
 }
+
+
 
 
 // ---------------- 🎤 iOS Live Recording (Improved) ----------------
-let liveStream, liveRecorder;
-let liveTranscriptDiv;
-let liveTextBuffer = "";
 
-// ✅ Start live transcription on iOS
-async function startIOSLiveTranscription() {
+let audioContext = null;
+
+// ✅ Replace your entire startIOSRecording() with THIS version
+async function startIOSRecording() {
   try {
-    liveStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    if (isRecording) return;
 
-    liveRecorder = new MediaRecorder(liveStream, { mimeType: "audio/mp4" });
+    // Ensure mic permission + live stream (sets global `mediaStream`)
+    await unlockIOSMicOnce();
 
-    // Create a "speaking" bubble if not already there
-    liveTranscriptDiv = document.querySelector(".msg.user.speaking");
-    if (!liveTranscriptDiv) {
-      liveTranscriptDiv = document.createElement("div");
-      liveTranscriptDiv.className = "msg user speaking";
-      liveTranscriptDiv.innerHTML =
-        `<strong>${translations["you_speaking"] || "You (speaking)"}:</strong> <span class="live-text"></span>`;
-      transcriptBox.appendChild(liveTranscriptDiv);
+    // Create (and resume) AudioContext — iOS often starts "suspended"
+    const AC = window.AudioContext || window.webkitAudioContext;
+    audioContext = new AC({ sampleRate: 44100 }); // hint only; iOS may use a different SR
+    if (audioContext.state === "suspended") {
+      try { await audioContext.resume(); } catch (_) {}
     }
 
-    liveTextBuffer = "";
+    // Source + ScriptProcessor (kept for iOS Safari compatibility)
+    const source = audioContext.createMediaStreamSource(mediaStream);
+    const processor = audioContext.createScriptProcessor(4096, 1, 1);
+    audioProcessor = processor;
 
-    liveRecorder.ondataavailable = async (e) => {
-  console.log("🎤 iOS chunk size:", e.data.size);
+    // Flip to recording BEFORE first buffer arrives
+    isRecording = true;
 
-  // ✅ Only skip if truly empty
-  if (e.data.size === 0) {
-    console.warn("⚠️ Empty chunk skipped");
+    // Collect PCM16 chunks
+    audioChunks = [];
+    processor.onaudioprocess = (event) => {
+      if (!isRecording) return;
+      const input = event.inputBuffer.getChannelData(0);
+      const out = new Int16Array(input.length);
+      for (let i = 0; i < input.length; i++) {
+        const s = Math.max(-1, Math.min(1, input[i]));
+        out[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      }
+      audioChunks.push(out);
+    };
+
+    // Keep the graph alive without audible output (iOS quirk)
+    const mute = audioContext.createGain();
+    mute.gain.value = 0;
+
+    // Keep refs for cleanup in stopIOSRecording()
+    processor._source = source;
+    processor._mute  = mute;
+
+    source.connect(processor);
+    processor.connect(mute);
+    mute.connect(audioContext.destination);
+
+    // UI
+    callStatus.innerText = "🎙️ Recording... Tap to stop.";
+    micBtn.textContent = "⏹ Stop";
+    setMicBlinking(true);
+
+    // Debug actual sample rate chosen by iOS
+    console.log(`[iOS] AudioContext sampleRate=${audioContext.sampleRate}`);
+
+  } catch (err) {
+    console.error("❌ iOS recording error:", err);
+    callStatus.innerText = "⚠️ Microphone access blocked or unavailable.";
+    try { if (mediaStream) mediaStream.getTracks().forEach(t => t.stop()); } catch (_) {}
+    isRecording = false;
+  }
+}
+
+
+
+
+async function stopIOSRecording() {
+  if (!isRecording) return;
+  isRecording = false;
+
+  // Let the last ScriptProcessor buffers arrive
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+  const sr = (audioContext && audioContext.sampleRate) ? audioContext.sampleRate : 44100;
+
+  // Disconnect graph (but don't stop tracks yet)
+  if (audioProcessor) {
+    try { audioProcessor.disconnect(); } catch (_) {}
+    try { audioProcessor._source && audioProcessor._source.disconnect(); } catch (_) {}
+    try { audioProcessor._mute && audioProcessor._mute.disconnect(); } catch (_) {}
+    audioProcessor = null;
+  }
+
+  micBtn.textContent = "🎤 Start";
+  setMicBlinking(false);
+  callStatus.innerText = "⏳ Processing...";
+
+  if (!Array.isArray(audioChunks) || audioChunks.length === 0) {
+    callStatus.innerText = "⚠️ No audio captured. Please try again.";
+    // Now it’s safe to stop tracks/close AC
+    try { mediaStream && mediaStream.getTracks().forEach(t => t.stop()); } catch (_) {}
+    try { audioContext && (await audioContext.close()); } catch (_) {}
+    mediaStream = null; audioContext = null;
     return;
   }
 
+  // Combine PCM16 chunks
+  const totalLength = audioChunks.reduce((t, c) => t + c.length, 0);
+  const combined = new Int16Array(totalLength);
+  let off = 0; for (const c of audioChunks) { combined.set(c, off); off += c.length; }
+
+  console.log(`[iOS] chunks=${audioChunks.length} samples=${totalLength} sr=${sr}`);
+
+  const wavBlob = encodeWAV(combined, sr);
+  console.log("📦 iOS WAV size (bytes):", wavBlob.size);
+
+  // Now stop tracks and close the context
+  try { mediaStream && mediaStream.getTracks().forEach(t => t.stop()); } catch (_) {}
+  try { audioContext && (await audioContext.close()); } catch (_) {}
+  mediaStream = null; audioContext = null;
+
+  if (wavBlob.size === 0) {
+  console.warn("❌ WAV blob is empty before upload");
+  callStatus.innerText = "⚠️ Empty recording (Safari). Try again.";
+  return;
+}
+
+  // Upload
+  await sendAudioToServer(wavBlob);
+}
+
+
+// ✅ Convert Int16Array to WAV format
+function encodeWAV(samples, sampleRate) {
+  const numChannels = 1;
+  const bytesPerSample = 2;
+  const blockAlign = numChannels * bytesPerSample;
+  const byteRate = sampleRate * blockAlign;
+
+  // → Coerce to Int16
+  let pcm;
+  if (samples instanceof Int16Array) {
+    pcm = samples;
+  } else {
+    const src = samples instanceof Float32Array ? samples : Float32Array.from(samples);
+    pcm = new Int16Array(src.length);
+    for (let i = 0; i < src.length; i++) {
+      const s = Math.max(-1, Math.min(1, src[i]));
+      pcm[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
+  }
+
+  const dataSize = pcm.length * bytesPerSample;
+  const buf = new ArrayBuffer(44 + dataSize);
+  const dv  = new DataView(buf);
+
+  let p = 0;
+  const w8 = (s) => { for (let i = 0; i < s.length; i++) dv.setUint8(p++, s.charCodeAt(i)); };
+
+  // RIFF header
+  w8('RIFF'); dv.setUint32(p, 36 + dataSize, true); p += 4;
+  w8('WAVE');
+
+  // fmt chunk
+  w8('fmt '); dv.setUint32(p, 16, true); p += 4;         // PCM header size
+  dv.setUint16(p, 1, true);                 p += 2;      // PCM
+  dv.setUint16(p, numChannels, true);       p += 2;
+  dv.setUint32(p, sampleRate, true);        p += 4;
+  dv.setUint32(p, byteRate, true);          p += 4;
+  dv.setUint16(p, blockAlign, true);        p += 2;
+  dv.setUint16(p, bytesPerSample * 8, true);p += 2;
+
+  // data chunk
+  w8('data'); dv.setUint32(p, dataSize, true); p += 4;
+
+  for (let i = 0; i < pcm.length; i++) { dv.setInt16(p, pcm[i], true); p += 2; }
+
+  // 🔧 Safari quirk: wrap ArrayBuffer in a Uint8Array
+  return new Blob([new Uint8Array(buf)], { type: 'audio/wav' });
+}
+
+
+
+// ✅ Send audio to server
+async function sendAudioToServer(audioBlob) {
+  console.log("📦 Audio blob size:", audioBlob.size, "type:", audioBlob.type);
+  
+  if (audioBlob.size === 0) {
+    callStatus.innerText = "⚠️ Empty recording. Please try again.";
+    return;
+  }
+  
   const formData = new FormData();
-  formData.append("audio", e.data, "chunk.mp4");
+  formData.append("audio", audioBlob, `recording-${Date.now()}.wav`);
 
+  
   try {
-    const res = await fetch("/transcribe", { method: "POST", body: formData });
-    const data = await res.json();
-    console.log("📜 iOS partial transcript:", data);
-
+    console.log("📡 Sending audio to server...");
+    const response = await fetch("/transcribe", {
+      method: "POST",
+      body: formData
+    });
+    
+    console.log("📋 Server response status:", response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("❌ Server error:", errorText);
+      throw new Error(`Server returned ${response.status}: ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log("📝 Transcription result:", data);
+    
     if (data.text && data.text.trim() !== "") {
-      liveTextBuffer += " " + data.text;
-      liveTranscriptDiv.querySelector(".live-text").innerText = liveTextBuffer.trim();
+      // Display the transcribed text
+      const div = document.createElement("div");
+      div.className = "msg user";
+      div.innerHTML = `<strong>${translations["you"] || "You"}:</strong> ${data.text}`;
+      transcriptBox.appendChild(div);
       transcriptBox.scrollTop = transcriptBox.scrollHeight;
-      resetSilenceTimer();
+      
+      // Send to therapist
+      sendToTherapist(data.text);
+      callStatus.innerText = "✅ Sent to therapist";
+    } else if (data.error) {
+      callStatus.innerText = `⚠️ ${data.error}`;
     } else {
-      console.warn("⚠️ iOS chunk had no text");
+      callStatus.innerText = "⚠️ Could not transcribe audio.";
     }
+    
   } catch (err) {
-    console.warn("⚠️ iOS chunk transcription failed:", err);
-  }
-};
-
-
-    liveRecorder.start(); // no interval
-    // Force flush every 800ms manually
-    liveTranscribeTimer = setInterval(() => {
-      if (liveRecorder && liveRecorder.state === "recording") {
-        liveRecorder.requestData();
-      }
-    }, 800);
-
-    callStatus.innerText = "🎙️ Listening... (iOS live)";
-    setMicBlinking(true);
-    resetSilenceTimer();
-
-  } catch (err) {
-    console.error("❌ iOS live mic error:", err);
-    callStatus.innerText = "⚠️ iOS microphone error.";
+    console.error("❌ Transcription error:", err);
+    callStatus.innerText = "⚠️ Failed to process audio. Please try again.";
   }
 }
-
-// ✅ Stop transcription and finalize
-function stopIOSLiveTranscription() {
-  if (liveRecorder && liveRecorder.state === "recording") {
-    clearInterval(liveTranscribeTimer);
-    liveRecorder.stop();
-    liveStream.getTracks().forEach(t => t.stop());
-  }
-  setMicBlinking(false);
-
-  if (liveTranscriptDiv) {
-    liveTranscriptDiv.classList.remove("speaking");
-
-    // Switch label to "You"
-    const label = liveTranscriptDiv.querySelector("strong");
-    if (label) label.innerText = `${translations["you"] || "You"}:`;
-
-    // Send final text
-    const finalText = liveTranscriptDiv.querySelector(".live-text").innerText.trim();
-    if (finalText) sendToTherapist(finalText);
-
-    liveTranscriptDiv = null;
-  }
-
-  callStatus.innerText = "⏳ Processing...";
-}
-
-
-
-
-
-// TEST ONLY
-
-
-document.getElementById("testRecBtn").onclick = async () => {
-  try {
-    console.log("🎤 Starting test recording...");
-
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const options = { mimeType: "audio/mp4" }; // iOS-friendly
-    let recorder;
-
-    try {
-      recorder = new MediaRecorder(stream, options);
-    } catch (err) {
-      console.warn("❌ Fallback recorder:", err);
-      recorder = new MediaRecorder(stream);
-    }
-
-    const chunks = [];
-    recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) chunks.push(e.data);
-    };
-
-    recorder.onstop = async () => {
-      const blob = new Blob(chunks, { type: "audio/mp4" });
-      console.log("📱 Test blob:", blob.size, blob.type);
-
-      if (blob.size === 0) {
-        alert("❌ Empty test blob — recording failed.");
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("audio", blob, "test.m4a");
-
-      const res = await fetch("/transcribe", { method: "POST", body: formData });
-      const data = await res.json();
-
-      console.log("📜 Test transcription response:", data);
-
-      if (data.text) {
-        alert("✅ Transcription: " + data.text);
-      } else {
-        alert("⚠️ No text: " + JSON.stringify(data));
-      }
-    };
-
-    recorder.start();
-    setTimeout(() => recorder.stop(), 3000); // stop after 3 seconds
-  } catch (err) {
-    console.error("❌ Test recording error:", err);
-    alert("❌ Could not start test recording: " + err.message);
-  }
-};

@@ -34,11 +34,30 @@ import tempfile
 import whisper 
 from pydub import AudioSegment
 import imageio_ffmpeg
+
+
+#DEBUGGING
+
+import logging
+import sys
+import shutil
+
+
+# Force logs to show up immediately in terminal
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+
+
+load_dotenv()
 # Path to your external .env file
-env_path = r"C:\Users\Professsor\Desktop\therapyapp.env\.env"
+#env_path = r"C:\Users\Professsor\Desktop\therapyapp.env\.env"
 
 # Load it
-load_dotenv(env_path)
+#load_dotenv(env_path)
+
 
 
 
@@ -166,6 +185,9 @@ Always:
 # ==================================
 
 app = Flask(__name__)
+
+app.logger.setLevel(logging.INFO)
+
 app.secret_key = os.getenv(
     "SECRET_KEY",
     "2a62ca2fbe9226e0f0892d5762315c4e3490c1f096b968e9fc6d69cfd2533cf3"
@@ -1221,52 +1243,85 @@ def rename_call_session():
 @app.route("/transcribe", methods=["POST"])
 def transcribe():
     try:
+        app.logger.info("🎤 /transcribe endpoint called")
+
         if "audio" not in request.files:
+            app.logger.error("❌ No audio in request.files")
             return jsonify({"error": "No audio uploaded"}), 400
 
         audio_file = request.files["audio"]
-        if not audio_file or audio_file.content_length == 0:
-            return jsonify({"error": "Empty audio file"}), 400
+        clen = getattr(audio_file, "content_length", None)
+        app.logger.info(f"📥 Received file: {audio_file.filename}, type={audio_file.mimetype}, content_length={clen}")
 
-        mime_type = audio_file.mimetype
-        app.logger.info(f"Received audio upload: {mime_type}, size={audio_file.content_length}")
+        # ⚠️ Do NOT early-return on content_length; iOS/Safari often reports 0/None.
+        file_ext = os.path.splitext(audio_file.filename or "")[1].lower() or ".wav"
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as tmp:
             temp_path = tmp.name
             try:
-                # 🔹 Force correct format for iOS uploads
-                if mime_type in ("audio/mp4", "audio/m4a", "audio/x-m4a", "audio/x-caf", "audio/aac"):
-                    audio = AudioSegment.from_file(audio_file.stream, format="mp4")
-                elif "webm" in mime_type:
-                    audio = AudioSegment.from_file(audio_file.stream, format="webm")
-                else:
-                    audio = AudioSegment.from_file(audio_file.stream)
+                # make sure stream is at start
+                audio_file.stream.seek(0)
+            except Exception:
+                pass
+            audio_file.save(temp_path)
 
-                # 🔹 Export into WAV (most stable for transcription)
-                audio.export(temp_path, format="wav")
+        file_size = os.path.getsize(temp_path)
+        app.logger.info(f"📦 Saved audio file: {temp_path}, size={file_size} bytes")
 
-            except Exception as conv_err:
-                app.logger.warning(f"Audio conversion failed: {conv_err}, saving raw file")
-                audio_file.seek(0)
-                audio_file.save(temp_path)
-
-        if os.path.getsize(temp_path) == 0:
+        # Treat tiny files as empty/corrupt (some proxies return a tiny body)
+        if file_size < 1024:
             os.remove(temp_path)
-            return jsonify({"error": "Processed audio file is empty"}), 400
+            app.logger.error("❌ Saved file is too small / empty")
+            return jsonify({"error": "Empty audio file"}), 400
 
-        # 🔹 Transcribe
-        if os.getenv("FLASK_ENV") == "development":
-            result = whisper_model.transcribe(temp_path)
-            text = result.get("text", "").strip()
-        else:
-            with open(temp_path, "rb") as f:
-                transcript = client.audio.transcriptions.create(
-                    model="whisper-large-v3",
-                    file=f
-                )
-            text = transcript.text.strip()
+        # Optional: normalize to WAV/16k mono if not already WAV
+        try:
+            ext = file_ext.lstrip(".")
+            if ext != "wav":
+                from pydub import AudioSegment
+                import imageio_ffmpeg
+                # make pydub use bundled ffmpeg if available
+                try:
+                    AudioSegment.converter = imageio_ffmpeg.get_ffmpeg_exe()
+                except Exception:
+                    pass
 
-        os.remove(temp_path)
+                wav_path = temp_path + ".wav"
+                AudioSegment.from_file(temp_path)\
+                    .set_frame_rate(16000)\
+                    .set_channels(1)\
+                    .export(wav_path, format="wav")
+                os.remove(temp_path)
+                temp_path = wav_path
+                file_ext = ".wav"
+                app.logger.info("🔄 Converted to WAV/16k mono for transcription")
+        except Exception as conv_err:
+            app.logger.warning(f"⚠️ Could not convert to WAV: {conv_err}")
+
+        # Transcribe
+        text = ""
+        try:
+            if os.getenv("FLASK_ENV") == "development" and whisper_model:
+                result = whisper_model.transcribe(temp_path)
+                text = (result.get("text") or "").strip()
+            else:
+                with open(temp_path, "rb") as f:
+                    transcript = client.audio.transcriptions.create(
+                        model="whisper-large-v3",
+                        file=f,
+                        file_type="wav" if file_ext == ".wav" else None
+                    )
+                text = (transcript.text or "").strip()
+        except Exception as transcribe_error:
+            app.logger.error(f"❌ Transcription failed: {transcribe_error}")
+
+        # Cleanup
+        try:
+            os.remove(temp_path)
+        except Exception:
+            pass
+
+        app.logger.info(f"✅ Transcription result: '{text}'")
         return jsonify({"text": text})
 
     except Exception as e:
