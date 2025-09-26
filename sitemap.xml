@@ -1,19 +1,59 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
   <url>
     <loc>https://theralinkapp.com/</loc>
     <priority>1.0</priority>
   </url>
+
   <url>
     <loc>https://theralinkapp.com/chat</loc>
     <priority>0.8</priority>
   </url>
+
   <url>
     <loc>https://theralinkapp.com/call</loc>
     <priority>0.8</priority>
   </url>
+
   <url>
-    <loc>https://theralinkapp.com/about</loc>
+    <loc>https://theralinkapp.com/signup</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://theralinkapp.com/login</loc>
     <priority>0.7</priority>
   </url>
+
+  <url>
+    <loc>https://theralinkapp.com/dashboard</loc>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://theralinkapp.com/privacy</loc>
+    <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://theralinkapp.com/terms</loc>
+    <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://theralinkapp.com/subscribe</loc>
+    <priority>0.6</priority>
+  </url>
+
+  <url>
+    <loc>https://theralinkapp.com/trial_chat</loc>
+    <priority>0.6</priority>
+  </url>
+
+  <url>
+    <loc>https://theralinkapp.com/trial_call</loc>
+    <priority>0.6</priority>
+  </url>
+
 </urlset>
