@@ -94,6 +94,20 @@
       position: relative;
     }
 
+    .forgot-link {
+      text-align: right;
+      margin-top: -8px;
+      margin-bottom: 10px;
+    }
+    .forgot-link a {
+      color: #00ff9f;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .forgot-link a:hover {
+      text-decoration: underline;
+    }
+
     /* 👇 small mobile tweak */
     @media (max-width: 576px) {
       .form-control, button {
@@ -111,6 +125,10 @@
       </div>
       <div class="mb-3">
         <input type="password" name="password" class="form-control" placeholder="Password" required>
+      </div>
+       <!-- ⭐ Added Forgot Password link -->
+      <div class="forgot-link">
+        <a href="{{ url_for('reset_password_request') }}">Forgot password?</a>
       </div>
       <button type="submit">Login</button>
     </form>

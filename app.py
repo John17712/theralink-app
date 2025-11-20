@@ -527,7 +527,7 @@ def send_reset_email(to_email: str, reset_link: str):
     username = os.getenv("MAIL_USERNAME")
     password = os.getenv("MAIL_PASSWORD")
     use_tls = os.getenv("MAIL_USE_TLS", "true").lower() == "true"
-    sender = os.getenv("MAIL_SENDER", "no-reply@theralink.local")
+    sender = os.getenv("MAIL_SENDER", "support@theralinkapp.com")
 
     subject = "Theralink password reset"
     body = (
@@ -547,7 +547,7 @@ def send_reset_email(to_email: str, reset_link: str):
     msg["To"] = to_email
     msg.set_content(body)
 
-    with smtplib.SMTP(host, port) as s:
+    with smtplib.SMTP_SSL(host, port) as s:
         if use_tls:
             s.starttls()
         s.login(username, password)
